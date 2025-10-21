@@ -31,19 +31,19 @@ public final class DesktopConnection implements Closeable {
     private final LocalSocket controlSocket;
     private final ControlChannel controlChannel;
 
-    private final LocalSocket micSocket;
+    private final LocalSocket clientAudioSocket;
     //private final FileDescriptor micFd;
 
-    private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket micSocket) throws IOException {
+    private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket clientAudioSocket) throws IOException {
         this.videoSocket = videoSocket;
         this.audioSocket = audioSocket;
         this.controlSocket = controlSocket;
-        this.micSocket = micSocket;
+        this.clientAudioSocket = clientAudioSocket;
 
         videoFd = videoSocket != null ? videoSocket.getFileDescriptor() : null;
         audioFd = audioSocket != null ? audioSocket.getFileDescriptor() : null;
         controlChannel = controlSocket != null ? new ControlChannel(controlSocket) : null;
-        //micFd = micSocket != null ? micSocket.getFileDescriptor() : null;
+        //micFd = clientAudioSocket != null ? clientAudioSocket.getFileDescriptor() : null;
     }
 
     private static LocalSocket connect(String abstractName) throws IOException {
@@ -61,14 +61,14 @@ public final class DesktopConnection implements Closeable {
         return SOCKET_NAME_PREFIX + String.format("_%08x", scid);
     }
 
-    public static DesktopConnection open(int scid, boolean tunnelForward, boolean video, boolean audio, boolean control, boolean microphone, boolean sendDummyByte)
+    public static DesktopConnection open(int scid, boolean tunnelForward, boolean video, boolean audio, boolean control, boolean client_audio, boolean sendDummyByte)
             throws IOException {
         String socketName = getSocketName(scid);
 
         LocalSocket videoSocket = null;
         LocalSocket audioSocket = null;
         LocalSocket controlSocket = null;
-        LocalSocket micSocket = null;
+        LocalSocket clientAudioSocket = null;
         try {
             if (tunnelForward) {
                 try (LocalServerSocket localServerSocket = new LocalServerSocket(socketName)) {
@@ -96,11 +96,11 @@ public final class DesktopConnection implements Closeable {
                             sendDummyByte = false;
                         }
                     }
-                    if (microphone) {
-                        micSocket = localServerSocket.accept();
+                    if (client_audio) {
+                        clientAudioSocket = localServerSocket.accept();
                         if (sendDummyByte) {
                             // send one byte so the client may read() to detect a connection error
-                            micSocket.getOutputStream().write(0);
+                            clientAudioSocket.getOutputStream().write(0);
                             sendDummyByte = false;
                         }
                     }
@@ -115,8 +115,8 @@ public final class DesktopConnection implements Closeable {
                 if (control) {
                     controlSocket = connect(socketName);
                 }
-                if (microphone) {
-                    micSocket = connect(socketName);
+                if (client_audio) {
+                    clientAudioSocket = connect(socketName);
                 }
             }
 
@@ -137,13 +137,13 @@ public final class DesktopConnection implements Closeable {
             if (controlSocket != null) {
                 controlSocket.close();
             }
-            if (micSocket != null) {
-                micSocket.close();
+            if (clientAudioSocket != null) {
+                clientAudioSocket.close();
             }
             throw e;
         }
 
-        return new DesktopConnection(videoSocket, audioSocket, controlSocket, micSocket);
+        return new DesktopConnection(videoSocket, audioSocket, controlSocket, clientAudioSocket);
     }
 
     private LocalSocket getFirstSocket() {
@@ -153,7 +153,10 @@ public final class DesktopConnection implements Closeable {
         if (audioSocket != null) {
             return audioSocket;
         }
-        return controlSocket;
+        if (controlSocket != null) {
+          return controlSocket;
+        }
+        return clientAudioSocket;
     }
 
     public void shutdown() throws IOException {
@@ -203,9 +206,9 @@ public final class DesktopConnection implements Closeable {
         return audioFd;
     }
 
-    public LocalSocket getMicSocket()
+    public LocalSocket getClientAudioSocket()
     {
-        return micSocket;
+        return clientAudioSocket;
     }
 
     public ControlChannel getControlChannel() {
