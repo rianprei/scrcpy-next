@@ -27,7 +27,7 @@ src = [
     'src/latency_stats.c',
     'src/mouse_capture.c',
     'src/mouse_sdk.c',
-    'src/microphone.c',
+    'src/client_audio.c',
     'src/opengl.c',
     'src/options.c',
     'src/packet_merger.c',
