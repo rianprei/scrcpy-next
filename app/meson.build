@@ -27,7 +27,6 @@ src = [
     'src/latency_stats.c',
     'src/mouse_capture.c',
     'src/mouse_sdk.c',
-    'src/client_audio.c',
     'src/opengl.c',
     'src/options.c',
     'src/packet_merger.c',
@@ -129,6 +128,12 @@ if videotoolbox_support
     src += [ 'src/interop/interop_videotoolbox.c' ]
 endif
 
+libavdevice_dep = dependency('libavdevice', static: get_option('static'), required: false)
+client_audio_support = get_option('client_audio') and libavdevice_dep.found()
+if client_audio_support
+    src += [ 'src/client_audio.c' ]
+endif
+
 usb_support = get_option('usb')
 if usb_support
     src += [
@@ -153,8 +158,8 @@ dependencies = [
     dependency('sdl3', version: '>= 3.2.0', static: static),
 ]
 
-if v4l2_support
-    dependencies += dependency('libavdevice', static: static)
+if v4l2_support or client_audio_support
+    dependencies += libavdevice_dep
 endif
 
 if vaapi_support
@@ -230,6 +235,9 @@ conf.set('HAVE_D3D11VA', d3d11va_support)
 
 # enable VideoToolbox hardware decoding (macOS only)
 conf.set('HAVE_VIDEOTOOLBOX', videotoolbox_support)
+
+# enable client audio forwarding (requires libavdevice)
+conf.set('HAVE_CLIENT_AUDIO', client_audio_support)
 
 # enable HID over AOA support (linux only)
 conf.set('HAVE_USB', usb_support)
