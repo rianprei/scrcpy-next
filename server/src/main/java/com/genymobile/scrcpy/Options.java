@@ -51,6 +51,8 @@ public class Options {
     private int cameraFps;
     private boolean cameraHighSpeed;
     private boolean cameraTorch;
+    private boolean cameraNoAutofocus;
+    private float cameraFocusDistance = Float.NaN;
     private boolean showTouches;
     private boolean stayAwake;
     private int screenOffTimeout = -1;
@@ -205,6 +207,14 @@ public class Options {
 
     public boolean getCameraTorch() {
         return cameraTorch;
+    }
+
+    public boolean getCameraNoAutofocus() {
+        return cameraNoAutofocus;
+    }
+
+    public float getCameraFocusDistance() {
+        return cameraFocusDistance;
     }
 
     public boolean getShowTouches() {
@@ -546,6 +556,9 @@ public class Options {
                         options.cameraZoom = Float.parseFloat(value);
                     }
                     break;
+                case "camera_focus_distance":
+                    options.cameraFocusDistance = parseFloat("camera_focus_distance", value);
+                    break;
                 case "camera_fps":
                     options.cameraFps = Integer.parseInt(value);
                     break;
@@ -554,6 +567,9 @@ public class Options {
                     break;
                 case "camera_torch":
                     options.cameraTorch = Boolean.parseBoolean(value);
+                    break;
+                case "camera_no_autofocus":
+                    options.cameraNoAutofocus = Boolean.parseBoolean(value);
                     break;
                 case "new_display":
                     options.newDisplay = parseNewDisplay(value);
