@@ -990,6 +990,7 @@ aoa_complete:
             .keyboard_grab = options->keyboard_grab,
             .window_title = window_title,
             .always_on_top = options->always_on_top,
+            .autofocus_window = options->autofocus_window,
             .window_x = options->window_x,
             .window_y = options->window_y,
             .window_width = options->window_width,

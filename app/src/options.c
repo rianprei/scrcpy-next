@@ -94,6 +94,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .fullscreen = false,
     .keyboard_grab = false,
     .always_on_top = false,
+    .autofocus_window = false,
     .control = true,
     .video_playback = true,
     .audio_playback = true,

@@ -31,6 +31,9 @@ sc_sdl_show_window(SDL_Window *window);
 void
 sc_sdl_hide_window(SDL_Window *window);
 
+void
+sc_sdl_raise_window(SDL_Window *window);
+
 bool
 sc_sdl_render_clear(SDL_Renderer *renderer);
 

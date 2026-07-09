@@ -109,6 +109,14 @@ sc_sdl_hide_window(SDL_Window *window) {
     }
 }
 
+void
+sc_sdl_raise_window(SDL_Window *window) {
+    bool ok = SDL_RaiseWindow(window);
+    if (!ok) {
+        LOGD("Could not raise window: %s", SDL_GetError());
+    }
+}
+
 bool
 sc_sdl_render_clear(SDL_Renderer *renderer) {
     bool ok = SDL_RenderClear(renderer);

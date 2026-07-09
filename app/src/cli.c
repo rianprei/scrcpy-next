@@ -24,6 +24,7 @@ enum {
     OPT_WINDOW_TITLE = 1000,
     OPT_PUSH_TARGET,
     OPT_ALWAYS_ON_TOP,
+    OPT_AUTOFOCUS_WINDOW,
     OPT_CROP,
     OPT_RECORD_FORMAT,
     OPT_RECORD_PTS,
@@ -177,6 +178,12 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_ALWAYS_ON_TOP,
         .longopt = "always-on-top",
         .text = "Make scrcpy window always on top (above other windows).",
+    },
+    {
+        .longopt_id = OPT_AUTOFOCUS_WINDOW,
+        .longopt = "autofocus-window",
+        .text = "Raise the scrcpy window and give it input focus when it is "
+                "shown.",
     },
     {
         .longopt_id = OPT_ANGLE,
@@ -3075,6 +3082,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_ALWAYS_ON_TOP:
                 opts->always_on_top = true;
+                break;
+            case OPT_AUTOFOCUS_WINDOW:
+                opts->autofocus_window = true;
                 break;
             case 'v':
                 args->version = true;

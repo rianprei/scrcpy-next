@@ -80,6 +80,7 @@ struct sc_screen {
         uint16_t height;
         bool fullscreen;
         bool start_fps_counter;
+        bool autofocus_window;
     } req;
 
     SDL_Window *window;
@@ -158,6 +159,7 @@ struct sc_screen_params {
 
     const char *window_title;
     bool always_on_top;
+    bool autofocus_window;
 
     int16_t window_x; // accepts SC_WINDOW_POSITION_UNDEFINED
     int16_t window_y; // accepts SC_WINDOW_POSITION_UNDEFINED

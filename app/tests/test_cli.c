@@ -50,6 +50,7 @@ static void test_options(void) {
     char *argv[] = {
         "scrcpy",
         "--always-on-top",
+        "--autofocus-window",
         "--video-bit-rate", "5M",
         "--crop", "100:200:300:400",
         "--fullscreen",
@@ -82,6 +83,7 @@ static void test_options(void) {
 
     const struct scrcpy_options *opts = &args.opts;
     assert(opts->always_on_top);
+    assert(opts->autofocus_window);
     assert(opts->video_bit_rate == 5000000);
     assert(!strcmp(opts->crop, "100:200:300:400"));
     assert(opts->fullscreen);

@@ -224,6 +224,7 @@ scrcpy_otg(struct scrcpy_options *options) {
         .shortcut_mods = options->shortcut_mods,
         .window_title = window_title,
         .always_on_top = options->always_on_top,
+        .autofocus_window = options->autofocus_window,
         .window_x = options->window_x,
         .window_y = options->window_y,
         .window_width = options->window_width,

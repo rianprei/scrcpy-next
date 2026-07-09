@@ -706,6 +706,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->req.height = params->window_height;
     screen->req.fullscreen = params->fullscreen;
     screen->req.start_fps_counter = params->start_fps_counter;
+    screen->req.autofocus_window = params->autofocus_window;
 
     screen->prevent_auto_resize = false;
 
@@ -916,6 +917,9 @@ sc_screen_init(struct sc_screen *screen,
         // Show the window immediately
         screen->window_shown = true;
         sc_sdl_show_window(screen->window);
+        if (screen->req.autofocus_window) {
+            sc_sdl_raise_window(screen->window);
+        }
 
         if (sc_screen_is_relative_mode(screen)) {
             // Capture mouse immediately if video mirroring is disabled
@@ -995,6 +999,9 @@ sc_screen_show_initial_window(struct sc_screen *screen) {
 
     screen->window_shown = true;
     sc_sdl_show_window(screen->window);
+    if (screen->req.autofocus_window) {
+        sc_sdl_raise_window(screen->window);
+    }
     sc_screen_update_content_rect(screen);
 }
 

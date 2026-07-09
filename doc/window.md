@@ -90,6 +90,14 @@ To keep the window always on top:
 scrcpy --always-on-top
 ```
 
+## Autofocus window
+
+To raise the window and give it input focus when it is shown:
+
+```bash
+scrcpy --autofocus-window
+```
+
 ## Fullscreen
 
 The app may be started directly in fullscreen:

@@ -354,6 +354,7 @@ struct scrcpy_options {
     bool fullscreen;
     bool keyboard_grab;
     bool always_on_top;
+    bool autofocus_window;
     bool control;
     bool video_playback;
     bool audio_playback;
