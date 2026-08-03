@@ -12,6 +12,7 @@ import com.genymobile.scrcpy.control.Controller;
 import com.genymobile.scrcpy.device.DesktopConnection;
 import com.genymobile.scrcpy.device.Device;
 import com.genymobile.scrcpy.device.Streamer;
+import com.genymobile.scrcpy.ime.ImeManager;
 import com.genymobile.scrcpy.model.ConfigurationException;
 import com.genymobile.scrcpy.model.NewDisplay;
 import com.genymobile.scrcpy.opengl.OpenGLRunner;
@@ -87,6 +88,24 @@ public final class Server {
             }
         }
 
+        ImeManager imeManager = null;
+        if (options.getIme()) {
+            // The watchdog needs the server binary before the regular cleanup
+            // process may unlink it.
+            Workarounds.apply();
+            imeManager = ImeManager.create();
+        }
+        try {
+            runScrcpy(options, imeManager);
+        } finally {
+            if (imeManager != null) {
+                imeManager.close();
+            }
+        }
+    }
+
+    private static void runScrcpy(Options options, ImeManager imeManager) throws IOException {
+
         CleanUp cleanUp = null;
 
         if (options.getCleanup()) {
@@ -101,9 +120,14 @@ public final class Server {
         boolean clientAudio = options.getClientAudio();
         boolean sendDummyByte = options.getSendDummyByte();
 
-        Workarounds.apply();
+        if (imeManager == null) {
+            Workarounds.apply();
+        }
 
         List<AsyncProcessor> asyncProcessors = new ArrayList<>();
+        if (imeManager != null) {
+            asyncProcessors.add(imeManager);
+        }
 
         DesktopConnection connection = DesktopConnection.open(scid, tunnelForward, video, audio, control, clientAudio, sendDummyByte);
         try {
@@ -115,7 +139,7 @@ public final class Server {
 
             if (control) {
                 ControlChannel controlChannel = connection.getControlChannel();
-                controller = new Controller(controlChannel, cleanUp, options);
+                controller = new Controller(controlChannel, cleanUp, imeManager, options);
                 asyncProcessors.add(controller);
             }
 

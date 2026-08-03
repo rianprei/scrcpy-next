@@ -51,6 +51,7 @@ _scrcpy() {
         --gamepad=
         -h --help
         --hwdec=
+        --ime
         --ignore-video-encoder-constraints
         -K
         --keep-active

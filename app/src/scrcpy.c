@@ -596,6 +596,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
         .tcpip = tcpip,
         .tcpip_dst = tcpip_dst,
         .cleanup = options->cleanup,
+        .ime = options->ime,
         .power_on = options->power_on,
         .server_push = options->server_push,
         .latency_stats = options->latency_stats,

@@ -82,6 +82,7 @@ struct sc_server_params {
     bool select_usb;
     bool select_tcpip;
     bool cleanup;
+    bool ime;
     bool power_on;
     bool server_push;
     bool latency_stats;

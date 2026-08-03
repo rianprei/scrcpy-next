@@ -400,6 +400,7 @@ struct scrcpy_options {
     bool select_usb;
     bool select_tcpip;
     bool cleanup;
+    bool ime;
     bool start_fps_counter;
     bool latency_stats;
     bool latency_probe;

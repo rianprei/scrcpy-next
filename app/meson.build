@@ -26,6 +26,7 @@ src = [
     'src/input_manager.c',
     'src/keymap.c',
     'src/keyboard_shortcuts.c',
+    'src/ime.c',
     'src/keyboard_sdk.c',
     'src/latency_probe.c',
     'src/latency_probe_calc.c',

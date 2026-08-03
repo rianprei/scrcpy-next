@@ -79,6 +79,7 @@ public class Options {
     private boolean downsizeOnError = true;
     private boolean cleanup = true;
     private boolean keepServer;
+    private boolean ime;
     private boolean powerOn = true;
     private boolean latencyStats;
 
@@ -327,6 +328,10 @@ public class Options {
 
     public boolean getKeepServer() {
         return keepServer;
+    }
+
+    public boolean getIme() {
+        return ime;
     }
 
     public boolean getPowerOn() {
@@ -580,6 +585,9 @@ public class Options {
                     break;
                 case "keep_server":
                     options.keepServer = Boolean.parseBoolean(value);
+                    break;
+                case "ime":
+                    options.ime = Boolean.parseBoolean(value);
                     break;
                 case "power_on":
                     options.powerOn = Boolean.parseBoolean(value);
