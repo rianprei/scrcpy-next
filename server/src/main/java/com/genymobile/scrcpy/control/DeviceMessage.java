@@ -1,5 +1,8 @@
 package com.genymobile.scrcpy.control;
 
+import com.genymobile.scrcpy.model.Point;
+import com.genymobile.scrcpy.model.Size;
+
 public final class DeviceMessage {
 
     public static final int TYPE_CLIPBOARD = 0;
@@ -7,6 +10,7 @@ public final class DeviceMessage {
     public static final int TYPE_UHID_OUTPUT = 2;
     public static final int TYPE_MEDIA_UPDATE = 3;
     public static final int TYPE_CLIPBOARD_IMAGE = 4;
+    public static final int TYPE_IME_CURSOR_ANCHOR = 5;
 
     // Values must be kept in sync with the client (device_msg.h)
     public static final int MEDIA_STATE_STOPPED = 0;
@@ -34,6 +38,10 @@ public final class DeviceMessage {
     private long duration;
     private String artist;
     private String album;
+    private boolean valid;
+    private Point anchorStart;
+    private Point anchorEnd;
+    private Size screenSize;
 
     private DeviceMessage() {
     }
@@ -79,6 +87,16 @@ public final class DeviceMessage {
         event.title = title;
         event.artist = artist;
         event.album = album;
+        return event;
+    }
+
+    public static DeviceMessage createImeCursorAnchor(boolean valid, Point start, Point end, Size screenSize) {
+        DeviceMessage event = new DeviceMessage();
+        event.type = TYPE_IME_CURSOR_ANCHOR;
+        event.valid = valid;
+        event.anchorStart = start;
+        event.anchorEnd = end;
+        event.screenSize = screenSize;
         return event;
     }
 
@@ -128,5 +146,21 @@ public final class DeviceMessage {
 
     public String getAlbum() {
         return album;
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public Point getAnchorStart() {
+        return anchorStart;
+    }
+
+    public Point getAnchorEnd() {
+        return anchorEnd;
+    }
+
+    public Size getScreenSize() {
+        return screenSize;
     }
 }

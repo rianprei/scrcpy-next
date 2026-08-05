@@ -3,9 +3,12 @@
 
 #include "common.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+
+#include "coords.h"
 
 #define DEVICE_MSG_MAX_SIZE (1 << 18) // 256k
 // type: 1 byte; length: 4 bytes
@@ -17,6 +20,14 @@ enum sc_device_msg_type {
     DEVICE_MSG_TYPE_UHID_OUTPUT,
     DEVICE_MSG_TYPE_MEDIA_UPDATE,
     DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
+    DEVICE_MSG_TYPE_IME_CURSOR_ANCHOR,
+};
+
+struct sc_ime_cursor_anchor {
+    bool valid;
+    struct sc_point start;
+    struct sc_point end;
+    struct sc_size screen_size;
 };
 
 // Values must be kept in sync with the server (DeviceMessage.java)
@@ -65,6 +76,7 @@ struct sc_device_msg {
             char *artist; // owned, to be freed by free(), may be NULL
             char *album; // owned, to be freed by free(), may be NULL
         } media_update;
+        struct sc_ime_cursor_anchor ime_cursor_anchor;
     };
 };
 

@@ -84,6 +84,12 @@ src = [
     'src/util/timeout.c',
 ]
 
+macos_support = host_machine.system() == 'darwin'
+if macos_support
+    add_languages('objc')
+    src += [ 'src/sys/macos/ime_position.m' ]
+endif
+
 feature_test_macros = [
     '-D_GNU_SOURCE',
     '-D_POSIX_C_SOURCE=200809L',
@@ -175,6 +181,10 @@ dependencies = [
     dependency('libswscale', static: static),
     dependency('sdl3', version: '>= 3.2.0', static: static),
 ]
+
+if macos_support
+    dependencies += dependency('appleframeworks', modules: 'AppKit')
+endif
 
 if v4l2_support or client_audio_support
     dependencies += libavdevice_dep

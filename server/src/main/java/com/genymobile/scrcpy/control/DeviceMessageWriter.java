@@ -1,5 +1,7 @@
 package com.genymobile.scrcpy.control;
 
+import com.genymobile.scrcpy.model.Point;
+import com.genymobile.scrcpy.model.Size;
 import com.genymobile.scrcpy.util.StringUtils;
 
 import java.io.BufferedOutputStream;
@@ -56,6 +58,19 @@ public class DeviceMessageWriter {
                 writeMediaText(msg.getTitle());
                 writeMediaText(msg.getArtist());
                 writeMediaText(msg.getAlbum());
+                break;
+            case DeviceMessage.TYPE_IME_CURSOR_ANCHOR:
+                boolean valid = msg.isValid();
+                dos.writeBoolean(valid);
+                Point start = msg.getAnchorStart();
+                Point end = msg.getAnchorEnd();
+                dos.writeInt(valid ? start.getX() : 0);
+                dos.writeInt(valid ? start.getY() : 0);
+                dos.writeInt(valid ? end.getX() : 0);
+                dos.writeInt(valid ? end.getY() : 0);
+                Size screenSize = msg.getScreenSize();
+                dos.writeShort(screenSize.getWidth());
+                dos.writeShort(screenSize.getHeight());
                 break;
             default:
                 throw new ControlProtocolException("Unknown event type: " + type);

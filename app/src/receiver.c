@@ -245,6 +245,19 @@ process_msg(struct sc_receiver *receiver, struct sc_device_msg *msg) {
                                      msg->media_update.album);
             break;
         }
+        case DEVICE_MSG_TYPE_IME_CURSOR_ANCHOR: {
+            void *data = malloc(sizeof(msg->ime_cursor_anchor));
+            if (!data) {
+                LOG_OOM();
+                return;
+            }
+            memcpy(data, &msg->ime_cursor_anchor,
+                   sizeof(msg->ime_cursor_anchor));
+            if (!sc_push_event_with_data(SC_EVENT_IME_CURSOR_ANCHOR, data)) {
+                free(data);
+            }
+            break;
+        }
     }
 }
 
