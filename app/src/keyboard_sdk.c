@@ -304,6 +304,10 @@ sc_key_processor_process_text(struct sc_key_processor *kp,
                               const struct sc_text_event *event) {
     struct sc_keyboard_sdk *kb = DOWNCAST(kp);
 
+    if (event->composing && !kb->ime) {
+        return;
+    }
+
     if (kb->key_inject_mode == SC_KEY_INJECT_MODE_RAW) {
         // Never inject text events
         return;
@@ -325,7 +329,9 @@ sc_key_processor_process_text(struct sc_key_processor *kp,
     }
 
     struct sc_control_msg msg;
-    if (kb->text_via_clipboard && !sc_str_is_ascii(text)) {
+    // With --ime, the sidecar input method injects any Unicode text
+    if (kb->text_via_clipboard && !kb->ime && !event->composing
+            && !sc_str_is_ascii(text)) {
         // The device cannot generate key events for most non-ASCII
         // characters: paste them instead
         msg.type = SC_CONTROL_MSG_TYPE_SET_CLIPBOARD;
@@ -335,6 +341,7 @@ sc_key_processor_process_text(struct sc_key_processor *kp,
     } else {
         msg.type = SC_CONTROL_MSG_TYPE_INJECT_TEXT;
         msg.inject_text.text = text;
+        msg.inject_text.composing = event->composing;
     }
     if (!sc_controller_push_msg(kb->controller, &msg)) {
         free(text);
@@ -346,11 +353,13 @@ void
 sc_keyboard_sdk_init(struct sc_keyboard_sdk *kb,
                      struct sc_controller *controller,
                      enum sc_key_inject_mode key_inject_mode,
-                     bool forward_key_repeat, bool text_via_clipboard) {
+                     bool forward_key_repeat, bool text_via_clipboard,
+                     bool ime) {
     kb->controller = controller;
     kb->key_inject_mode = key_inject_mode;
     kb->forward_key_repeat = forward_key_repeat;
     kb->text_via_clipboard = text_via_clipboard;
+    kb->ime = ime;
 
     kb->repeat = 0;
 

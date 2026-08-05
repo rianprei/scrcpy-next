@@ -930,7 +930,7 @@ aoa_complete:
             sc_keyboard_sdk_init(&s->keyboard_sdk, &s->controller,
                                  options->key_inject_mode,
                                  options->forward_key_repeat,
-                                 options->text_via_clipboard);
+                                 options->text_via_clipboard, options->ime);
             kp = &s->keyboard_sdk.key_processor;
         } else if (options->keyboard_input_mode
                 == SC_KEYBOARD_INPUT_MODE_UHID) {
@@ -1041,6 +1041,7 @@ aoa_complete:
             .vsync = options->vsync,
             .fullscreen = options->fullscreen,
             .start_fps_counter = options->start_fps_counter,
+            .ime = options->ime,
         };
 
         if (!sc_screen_init(&s->screen, &screen_params)) {

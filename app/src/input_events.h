@@ -381,6 +381,7 @@ struct sc_key_event {
 
 struct sc_text_event {
     const char *text; // not owned
+    bool composing;
 };
 
 struct sc_mouse_click_event {

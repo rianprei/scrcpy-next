@@ -55,6 +55,7 @@ struct sc_screen {
     struct sc_size axis_size; // device screen size in natural orientation
     bool show_keymap;
     enum sc_window_size_unit window_size_unit;
+    bool ime;
 
     struct sc_controller *controller;
 
@@ -125,6 +126,8 @@ struct sc_screen {
     SDL_Texture *icon_tex;
     // render icon rather than frame?
     bool is_icon_active;
+    bool text_input_area_initialized;
+    struct sc_size text_input_area_window_size;
 
     // Track resize requests caused by frame-size changes
     struct sc_resize_tracker {
@@ -191,6 +194,7 @@ struct sc_screen_params {
 
     bool fullscreen;
     bool start_fps_counter;
+    bool ime;
 };
 
 // initialize screen, create window, renderer and texture (window is hidden)

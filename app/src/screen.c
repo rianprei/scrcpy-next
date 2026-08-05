@@ -463,6 +463,32 @@ sc_screen_render_keymap(struct sc_screen *screen, const SDL_FRect *geometry) {
     SDL_SetRenderDrawBlendMode(renderer, old_blend_mode);
 }
 
+static void
+sc_screen_update_text_input_area(struct sc_screen *screen) {
+    if (!screen->ime) {
+        return;
+    }
+
+    struct sc_size window_size = sc_sdl_get_window_size(screen->window);
+    if (screen->text_input_area_initialized
+            && screen->text_input_area_window_size.width == window_size.width
+            && screen->text_input_area_window_size.height == window_size.height) {
+        return;
+    }
+    screen->text_input_area_initialized = true;
+    screen->text_input_area_window_size = window_size;
+
+    SDL_Rect area = {
+        .x = 0,
+        .y = MAX(window_size.height - 1, 0),
+        .w = MAX(window_size.width, 1),
+        .h = 1,
+    };
+    if (!SDL_SetTextInputArea(screen->window, &area, area.w / 2)) {
+        LOGW("Could not set IME candidate position: %s", SDL_GetError());
+    }
+}
+
 // render the texture to the renderer
 //
 // Set the update_content_rect flag if the window or content size may have
@@ -474,6 +500,7 @@ sc_screen_render(struct sc_screen *screen, bool update_content_rect) {
     if (update_content_rect) {
         sc_screen_update_content_rect(screen);
     }
+    sc_screen_update_text_input_area(screen);
 
     SDL_Renderer *renderer = screen->renderer;
     struct sc_screen_bg_color bg = screen->bg;
@@ -772,6 +799,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->orientation = SC_ORIENTATION_0;
     screen->disconnected = false;
     screen->disconnect_started = false;
+    screen->text_input_area_initialized = false;
 
     screen->video = params->video;
     screen->camera = params->camera;
@@ -792,6 +820,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->axis_size = params->axis_size;
     screen->show_keymap = params->show_keymap;
     screen->window_size_unit = params->window_size_unit;
+    screen->ime = params->ime;
 
     screen->bg.r = (params->background_color >> 16) & 0xFF;
     screen->bg.g = (params->background_color >> 8) & 0xFF;
