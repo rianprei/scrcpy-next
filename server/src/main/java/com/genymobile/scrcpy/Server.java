@@ -69,8 +69,8 @@ public final class Server {
     }
 
     private static void scrcpy(Options options) throws IOException, ConfigurationException {
-        if (Build.VERSION.SDK_INT < AndroidVersions.API_31_ANDROID_12 && options.getVideoSource() == VideoSource.CAMERA) {
-            Ln.e("Camera mirroring is not supported before Android 12");
+        if (Build.VERSION.SDK_INT < AndroidVersions.API_30_ANDROID_11 && options.getVideoSource() == VideoSource.CAMERA) {
+            Ln.e("Camera mirroring is not supported before Android 11");
             throw new ConfigurationException("Camera mirroring is not supported");
         }
 

@@ -1,6 +1,7 @@
 package com.genymobile.scrcpy.video;
 
 import com.genymobile.scrcpy.AndroidVersions;
+import com.genymobile.scrcpy.FakeContext;
 import com.genymobile.scrcpy.Options;
 import com.genymobile.scrcpy.model.ConfigurationException;
 import com.genymobile.scrcpy.model.Orientation;
@@ -16,6 +17,8 @@ import com.genymobile.scrcpy.wrappers.ServiceManager;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -30,10 +33,15 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodec;
+import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.IBinder;
 import android.util.Range;
 import android.view.Surface;
+import android.view.View;
+import android.view.WindowManager;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -126,7 +134,25 @@ public class CameraCapture extends SurfaceCapture {
             }
 
             Ln.i("Using camera '" + cameraId + "'");
-            cameraDevice = openCamera(cameraId);
+            int attempts = 1;
+            if (Build.VERSION.SDK_INT == AndroidVersions.API_30_ANDROID_11) {
+                // On Android 11, the camera service only serves clients it considers foreground;
+                // an invisible overlay window makes the shell process count as one on many (not
+                // all) ROMs. The camera may take a few tries to open while the window settles.
+                prepareOverlayWindow();
+                attempts = 4;
+            }
+            while (true) {
+                try {
+                    cameraDevice = openCamera(cameraId);
+                    break;
+                } catch (CameraAccessException e) {
+                    if (--attempts == 0) {
+                        throw e;
+                    }
+                    Thread.sleep(200);
+                }
+            }
         } catch (CameraAccessException | InterruptedException e) {
             throw new IOException(e);
         }
@@ -407,6 +433,27 @@ public class CameraCapture extends SurfaceCapture {
 
         this.videoConstraints = videoConstraints;
         return true;
+    }
+
+    @SuppressLint({"PrivateApi", "SoonBlockedPrivateApi"})
+    @TargetApi(AndroidVersions.API_30_ANDROID_11)
+    private static void prepareOverlayWindow() {
+        try {
+            WindowManager wm = (WindowManager) FakeContext.get().getSystemService(Context.WINDOW_SERVICE);
+            // WindowManagerImpl rejects windows without a parent token; give it a default one
+            wm.getClass().getMethod("setDefaultToken", IBinder.class).invoke(wm, new Binder());
+            int type = WindowManager.LayoutParams.class.getField("TYPE_SECURE_SYSTEM_OVERLAY").getInt(null);
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                    type,
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT);
+            wm.addView(new View(FakeContext.get()), params);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // ROM-dependent (see <https://github.com/Genymobile/scrcpy/pull/4213>); opening the
+            // camera below will most likely fail, but let it report its own error
+            Ln.w("Could not create foreground overlay window: " + e);
+        }
     }
 
     @SuppressLint("MissingPermission")
