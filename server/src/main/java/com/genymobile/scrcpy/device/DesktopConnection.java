@@ -12,7 +12,6 @@ import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import com.genymobile.scrcpy.util.Ln;
 
 public final class DesktopConnection implements Closeable {
 
@@ -34,7 +33,8 @@ public final class DesktopConnection implements Closeable {
     private final LocalSocket clientAudioSocket;
     //private final FileDescriptor micFd;
 
-    private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket clientAudioSocket) throws IOException {
+    private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket clientAudioSocket)
+            throws IOException {
         this.videoSocket = videoSocket;
         this.audioSocket = audioSocket;
         this.controlSocket = controlSocket;
@@ -61,7 +61,8 @@ public final class DesktopConnection implements Closeable {
         return SOCKET_NAME_PREFIX + String.format("_%08x", scid);
     }
 
-    public static DesktopConnection open(int scid, boolean tunnelForward, boolean video, boolean audio, boolean control, boolean client_audio, boolean sendDummyByte)
+    public static DesktopConnection open(int scid, boolean tunnelForward, boolean video, boolean audio, boolean control, boolean clientAudio,
+            boolean sendDummyByte)
             throws IOException {
         String socketName = getSocketName(scid);
 
@@ -96,7 +97,7 @@ public final class DesktopConnection implements Closeable {
                             sendDummyByte = false;
                         }
                     }
-                    if (client_audio) {
+                    if (clientAudio) {
                         clientAudioSocket = localServerSocket.accept();
                         if (sendDummyByte) {
                             // send one byte so the client may read() to detect a connection error
@@ -115,7 +116,7 @@ public final class DesktopConnection implements Closeable {
                 if (control) {
                     controlSocket = connect(socketName);
                 }
-                if (client_audio) {
+                if (clientAudio) {
                     clientAudioSocket = connect(socketName);
                 }
             }
@@ -154,7 +155,7 @@ public final class DesktopConnection implements Closeable {
             return audioSocket;
         }
         if (controlSocket != null) {
-          return controlSocket;
+            return controlSocket;
         }
         return clientAudioSocket;
     }
@@ -206,8 +207,7 @@ public final class DesktopConnection implements Closeable {
         return audioFd;
     }
 
-    public LocalSocket getClientAudioSocket()
-    {
+    public LocalSocket getClientAudioSocket() {
         return clientAudioSocket;
     }
 
