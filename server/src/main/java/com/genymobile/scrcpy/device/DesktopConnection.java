@@ -30,7 +30,7 @@ public final class DesktopConnection implements Closeable {
     private final LocalSocket controlSocket;
     private final ControlChannel controlChannel;
 
-    private final LocalSocket clientAudioSocket;
+    private LocalSocket clientAudioSocket;
     //private final FileDescriptor micFd;
 
     private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket clientAudioSocket)
@@ -160,7 +160,7 @@ public final class DesktopConnection implements Closeable {
         return clientAudioSocket;
     }
 
-    public void shutdown() throws IOException {
+    public synchronized void shutdown() throws IOException {
         if (videoSocket != null) {
             videoSocket.shutdownInput();
             videoSocket.shutdownOutput();
@@ -172,6 +172,10 @@ public final class DesktopConnection implements Closeable {
         if (controlSocket != null) {
             controlSocket.shutdownInput();
             controlSocket.shutdownOutput();
+        }
+        if (clientAudioSocket != null) {
+            clientAudioSocket.shutdownInput();
+            clientAudioSocket.shutdownOutput();
         }
     }
 
@@ -185,6 +189,7 @@ public final class DesktopConnection implements Closeable {
         if (controlSocket != null) {
             controlSocket.close();
         }
+        closeClientAudio();
     }
 
     public void sendDeviceMeta(String deviceName) throws IOException {
@@ -209,6 +214,17 @@ public final class DesktopConnection implements Closeable {
 
     public LocalSocket getClientAudioSocket() {
         return clientAudioSocket;
+    }
+
+    /** Close only the optional client-audio lane while screen, device audio and
+     * control continue. Idempotent because an injection failure races normal
+     * connection teardown. */
+    public synchronized void closeClientAudio() throws IOException {
+        LocalSocket socket = clientAudioSocket;
+        clientAudioSocket = null;
+        if (socket != null) {
+            socket.close();
+        }
     }
 
     public ControlChannel getControlChannel() {
