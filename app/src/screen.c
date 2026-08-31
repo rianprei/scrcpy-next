@@ -19,6 +19,44 @@
 #define DOWNCAST(SINK) container_of(SINK, struct sc_screen, frame_sink)
 
 static void
+sc_screen_set_keyboard_grab_hint(const char *hint, bool enabled) {
+    bool ok = enabled
+            ? SDL_SetHintWithPriority(hint, "0", SDL_HINT_OVERRIDE)
+            : SDL_ResetHint(hint);
+    if (!ok) {
+        LOGW("Could not %s keyboard grab hint %s: %s",
+             enabled ? "set" : "reset", hint, SDL_GetError());
+    }
+}
+
+static void
+sc_screen_set_keyboard_grab_hints(bool enabled) {
+    sc_screen_set_keyboard_grab_hint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED,
+                                     enabled);
+#ifdef _WIN32
+    sc_screen_set_keyboard_grab_hint(SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4,
+                                     enabled);
+#endif
+}
+
+static void
+sc_screen_set_keyboard_grab(struct sc_screen *screen, bool enabled) {
+    if (enabled) {
+        sc_screen_set_keyboard_grab_hints(true);
+    }
+
+    bool ok = SDL_SetWindowKeyboardGrab(screen->window, enabled);
+    if (!ok) {
+        LOGW("Could not %s keyboard grab: %s",
+             enabled ? "enable" : "disable", SDL_GetError());
+    }
+
+    if (!enabled || !ok) {
+        sc_screen_set_keyboard_grab_hints(false);
+    }
+}
+
+static void
 set_aspect_ratio(struct sc_screen *screen, struct sc_size content_size) {
     assert(content_size.width && content_size.height);
 
@@ -558,6 +596,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->reconnect = params->reconnect;
     screen->owns_window = true;
     screen->awaiting_first_frame = false;
+    screen->keyboard_grab = params->keyboard_grab;
 
     screen->bg.r = (params->background_color >> 16) & 0xFF;
     screen->bg.g = (params->background_color >> 8) & 0xFF;
@@ -926,6 +965,9 @@ sc_screen_destroy(struct sc_screen *screen) {
 #ifndef NDEBUG
     assert(!screen->open);
 #endif
+    if (screen->keyboard_grab) {
+        sc_screen_set_keyboard_grab(screen, false);
+    }
     if (screen->disconnect_started) {
         sc_disconnect_destroy(&screen->disconnect);
     }
@@ -1319,10 +1361,16 @@ sc_screen_handle_event(struct sc_screen *screen, const SDL_Event *event) {
         case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
             LOGD("Switched to fullscreen mode");
             assert(screen->video);
+            if (screen->keyboard_grab) {
+                sc_screen_set_keyboard_grab(screen, true);
+            }
             return;
         case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:
             LOGD("Switched to windowed mode");
             assert(screen->video);
+            if (screen->keyboard_grab) {
+                sc_screen_set_keyboard_grab(screen, false);
+            }
             if (is_windowed(screen)) {
                 apply_pending_resize(screen);
                 sc_screen_render(screen, true);

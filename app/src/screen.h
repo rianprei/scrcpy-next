@@ -46,6 +46,7 @@ struct sc_screen {
     // the window is reused from a previous session and no frame has been
     // received yet
     bool awaiting_first_frame;
+    bool keyboard_grab;
 
     struct sc_controller *controller;
 
@@ -146,6 +147,7 @@ struct sc_screen_params {
     const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
+    bool keyboard_grab;
 
     const char *window_title;
     bool always_on_top;

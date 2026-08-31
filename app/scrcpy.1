@@ -308,6 +308,20 @@ This option is only available when the HID keyboard is enabled (or a physical ke
 Also see \fB\-\-mouse\fR and \fB\-\-gamepad\fR.
 
 .TP
+.BI "\-\-keyboard\-grab " mode
+Select when to grab the host keyboard.
+
+Possible values are "disabled" (never) and "fullscreen" (while the scrcpy window is fullscreen).
+
+Configured MOD shortcuts and F11 remain handled by scrcpy. Other supported keys are processed normally by the selected keyboard input mode.
+
+On Windows, "fullscreen" requires the environment variable SDL_WINDOWS_RAW_KEYBOARD=0 to be set before starting scrcpy.
+
+Some system shortcuts, such as Ctrl+Alt+Del, cannot be captured.
+
+Default is "disabled".
+
+.TP
 .B \-\-kill\-adb\-on\-close
 Kill adb when scrcpy terminates.
 

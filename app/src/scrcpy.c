@@ -977,6 +977,7 @@ aoa_complete:
             .keymap = options->keymap ? &s->keymap : NULL,
             .clipboard_autosync = options->clipboard_autosync,
             .shortcut_mods = options->shortcut_mods,
+            .keyboard_grab = options->keyboard_grab,
             .window_title = window_title,
             .always_on_top = options->always_on_top,
             .window_x = options->window_x,
@@ -1638,6 +1639,18 @@ wait_for_device(const struct scrcpy_options *options, struct sc_reconnect *rc,
 
 enum scrcpy_exit_code
 scrcpy(struct scrcpy_options *options) {
+#ifdef _WIN32
+    if (options->keyboard_grab) {
+        const char *raw_keyboard =
+            SDL_getenv(SDL_HINT_WINDOWS_RAW_KEYBOARD);
+        if (!raw_keyboard || strcmp(raw_keyboard, "0")) {
+            LOGE("--keyboard-grab=fullscreen on Windows requires the "
+                 "environment variable SDL_WINDOWS_RAW_KEYBOARD=0");
+            return SCRCPY_EXIT_FAILURE;
+        }
+    }
+#endif
+
     // Minimal SDL initialization
     if (!SDL_Init(SDL_INIT_EVENTS)) {
         LOGE("Could not initialize SDL: %s", SDL_GetError());

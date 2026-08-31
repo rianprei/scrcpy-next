@@ -43,6 +43,7 @@ _scrcpy() {
         -K
         --keep-active
         --keyboard=
+        --keyboard-grab=
         --kill-adb-on-close
         --legacy-paste
         --list-apps
@@ -159,6 +160,10 @@ _scrcpy() {
             ;;
         --keyboard)
             COMPREPLY=($(compgen -W 'disabled sdk uhid aoa' -- "$cur"))
+            return
+            ;;
+        --keyboard-grab)
+            COMPREPLY=($(compgen -W 'disabled fullscreen' -- "$cur"))
             return
             ;;
         --mouse)

@@ -99,6 +99,7 @@ enum {
     OPT_RECORD_ORIENTATION,
     OPT_ORIENTATION,
     OPT_KEYBOARD,
+    OPT_KEYBOARD_GRAB,
     OPT_MOUSE,
     OPT_NO_WINDOW,
     OPT_MOUSE_BIND,
@@ -539,6 +540,20 @@ static const struct sc_option options[] = {
                 "This option is only available when a HID keyboard is enabled "
                 "(or a physical keyboard is connected).\n"
                 "Also see --mouse and --gamepad.",
+    },
+    {
+        .longopt_id = OPT_KEYBOARD_GRAB,
+        .longopt = "keyboard-grab",
+        .argdesc = "mode",
+        .text = "Select when to grab the host keyboard.\n"
+                "Possible values are \"disabled\" (never) and \"fullscreen\" "
+                "(while the scrcpy window is fullscreen).\n"
+                "Configured MOD shortcuts and F11 remain handled by scrcpy. "
+                "On Windows, \"fullscreen\" requires "
+                "SDL_WINDOWS_RAW_KEYBOARD=0 in the environment before "
+                "startup. Some system shortcuts, such as Ctrl+Alt+Del, "
+                "cannot be captured.\n"
+                "Default is \"disabled\".",
     },
     {
         .longopt_id = OPT_KILL_ADB_ON_CLOSE,
@@ -2890,6 +2905,17 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_KEYBOARD:
                 if (!parse_keyboard(optarg, &opts->keyboard_input_mode)) {
+                    return false;
+                }
+                break;
+            case OPT_KEYBOARD_GRAB:
+                if (!strcmp(optarg, "disabled")) {
+                    opts->keyboard_grab = false;
+                } else if (!strcmp(optarg, "fullscreen")) {
+                    opts->keyboard_grab = true;
+                } else {
+                    LOGE("Unsupported keyboard grab mode: %s (expected "
+                         "disabled or fullscreen)", optarg);
                     return false;
                 }
                 break;

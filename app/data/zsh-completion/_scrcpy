@@ -50,6 +50,7 @@ arguments=(
     '-K[Use UHID/AOA keyboard \(same as --keyboard=uhid or --keyboard=aoa, depending on OTG mode\)]'
     '--keep-active[Keep the screen on by simulating user activity]'
     '--keyboard=[Set the keyboard input mode]:mode:(disabled sdk uhid aoa)'
+    '--keyboard-grab=[Set when to grab the host keyboard]:mode:(disabled fullscreen)'
     '--kill-adb-on-close[Kill adb when scrcpy terminates]'
     '--legacy-paste[Inject computer clipboard text as a sequence of key events on Ctrl+v]'
     '--list-apps[List Android apps installed on the device]'

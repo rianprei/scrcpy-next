@@ -84,6 +84,27 @@ scrcpy -f   # short version
 Fullscreen mode can then be toggled dynamically with <kbd>MOD</kbd>+<kbd>f</kbd>
 or <kbd>F11</kbd> (see [shortcuts](shortcuts.md)).
 
+To grab the host keyboard while fullscreen, use:
+
+```bash
+scrcpy --keyboard-grab=fullscreen
+```
+
+On Windows, SDL raw keyboard input must be explicitly disabled before startup:
+
+```batch
+set SDL_WINDOWS_RAW_KEYBOARD=0
+scrcpy --keyboard-grab=fullscreen
+```
+
+Configured <kbd>MOD</kbd> combinations and bare <kbd>F11</kbd> remain handled by
+scrcpy. Other supported keys are sent through the selected keyboard input mode;
+use [`--shortcut-mod`](shortcuts.md) to choose which modifier scrcpy reserves.
+
+The grab is released on leaving fullscreen. Some system shortcuts, such as
+<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd> on Windows, cannot be captured. By
+default, keyboard grab is disabled.
+
 
 ## Disable screensaver
 
