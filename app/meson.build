@@ -7,6 +7,7 @@ src = [
     'src/audio_player.c',
     'src/audio_regulator.c',
     'src/cli.c',
+    'src/clipboard_image.c',
     'src/clock.c',
     'src/compat.c',
     'src/control_msg.c',

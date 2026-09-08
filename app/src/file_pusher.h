@@ -14,6 +14,9 @@ struct sc_controller;
 enum sc_file_pusher_action {
     SC_FILE_PUSHER_ACTION_INSTALL_APK,
     SC_FILE_PUSHER_ACTION_PUSH_FILE,
+    // Push a temporary image file to the device Pictures folder, then remove
+    // the local file
+    SC_FILE_PUSHER_ACTION_PUSH_IMAGE,
 };
 
 struct sc_file_pusher_request {

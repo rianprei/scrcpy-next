@@ -4,12 +4,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_init.h>
+
 #include "adb/adb.h"
 #include "control_msg.h"
 #include "controller.h"
 #include "util/log.h"
 
 #define DEFAULT_PUSH_TARGET "/sdcard/Download/"
+
+// Images from the computer clipboard are pushed to the device Pictures folder
+#define IMAGE_PUSH_TARGET "/sdcard/Pictures/scrcpy/"
 
 static void
 sc_file_pusher_request_destroy(struct sc_file_pusher_request *req) {
@@ -114,10 +120,10 @@ sc_file_pusher_request(struct sc_file_pusher *fp,
 }
 
 static bool
-request_scan_file(struct sc_file_pusher *fp) {
+request_scan_file(struct sc_file_pusher *fp, const char *path) {
     struct sc_control_msg msg;
     msg.type = SC_CONTROL_MSG_TYPE_SCAN_FILE;
-    msg.scan_file.path = strdup(fp->push_target);
+    msg.scan_file.path = strdup(path);
     if (!msg.scan_file.path) {
         LOG_OOM();
         return false;
@@ -165,12 +171,38 @@ run_file_pusher(void *data) {
             } else {
                 LOGE("Failed to install %s", req.file);
             }
+        } else if (req.action == SC_FILE_PUSHER_ACTION_PUSH_IMAGE) {
+            LOGI("Pushing %s...", req.file);
+            // Make sure that the target directory exists (adb push does not
+            // create it)
+            bool ok = sc_adb_shell_mkdir(intr, serial, IMAGE_PUSH_TARGET);
+            if (ok) {
+                ok = sc_adb_push(intr, serial, req.file, IMAGE_PUSH_TARGET, 0);
+                if (ok) {
+                    LOGI("%s successfully pushed to %s", req.file,
+                         IMAGE_PUSH_TARGET);
+                    request_scan_file(fp, IMAGE_PUSH_TARGET); // any error already logged
+                } else {
+                    LOGE("Failed to push %s to %s", req.file,
+                         IMAGE_PUSH_TARGET);
+                }
+            } else {
+                LOGE("Failed to create %s", IMAGE_PUSH_TARGET);
+            }
+
+            // The image is a temporary file, remove it in any case
+            if (SDL_RemovePath(req.file)) {
+                LOGD("Temporary image file %s removed", req.file);
+            } else {
+                LOGW("Could not remove temporary image file %s: %s",
+                     req.file, SDL_GetError());
+            }
         } else {
             LOGI("Pushing %s...", req.file);
             bool ok = sc_adb_push(intr, serial, req.file, push_target, 0);
             if (ok) {
                 LOGI("%s successfully pushed to %s", req.file, push_target);
-                request_scan_file(fp); // any error already logged
+                request_scan_file(fp, push_target); // any error already logged
             } else {
                 LOGE("Failed to push %s to %s", req.file, push_target);
             }

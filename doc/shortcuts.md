@@ -52,6 +52,7 @@ _<kbd>[Super]</kbd> is typically the <kbd>Windows</kbd> or <kbd>Cmd</kbd> key._
  | Copy to clipboard⁵                          | <kbd>MOD</kbd>+<kbd>c</kbd>
  | Cut to clipboard⁵                           | <kbd>MOD</kbd>+<kbd>x</kbd>
  | Synchronize clipboards and paste⁵           | <kbd>MOD</kbd>+<kbd>v</kbd>
+ | Push clipboard image to the device          | <kbd>MOD</kbd>+<kbd>v</kbd> _(if the clipboard contains an image)_
  | Inject computer clipboard text              | <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd>
  | Open keyboard settings (HID keyboard only)  | <kbd>MOD</kbd>+<kbd>k</kbd>
  | Save screenshot (PNG, in ~/Downloads if it exists) | <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>s</kbd>
@@ -71,6 +72,11 @@ _²Right-click turns the screen on if it was off, presses BACK otherwise._
 _³4th and 5th mouse buttons, if your mouse has them._  
 _⁴For react-native apps in development, `MENU` triggers development menu._  
 _⁵Only on Android >= 7._
+
+If the computer clipboard contains an image (and no text), then
+<kbd>MOD</kbd>+<kbd>v</kbd> and <kbd>Ctrl</kbd>+<kbd>v</kbd> push it to the
+device into `/sdcard/Pictures/scrcpy/` (instead of pasting text). This makes
+it easy to transfer a screenshot from the computer to the device gallery.
 
 Shortcuts with repeated keys are executed by releasing and pressing the key a
 second time. For example, to execute "Expand settings panel":

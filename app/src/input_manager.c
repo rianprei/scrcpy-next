@@ -9,6 +9,7 @@
 
 #include "android/input.h"
 #include "android/keycodes.h"
+#include "clipboard_image.h"
 #include "events.h"
 #include "input_events.h"
 #include "screen.h"
@@ -816,6 +817,10 @@ sc_input_manager_process_key(struct sc_input_manager *im,
                         if (shift || im->legacy_paste) {
                             // inject the text as input events
                             clipboard_paste(im);
+                        } else if (im->fp
+                                   && sc_clipboard_image_paste(im->fp)) {
+                            // The clipboard contained an image: it has been
+                            // pushed to the device Pictures folder
                         } else {
                             // store the text in the device clipboard and paste,
                             // without requesting an acknowledgment
@@ -905,6 +910,14 @@ sc_input_manager_process_key(struct sc_input_manager *im,
         if (im->legacy_paste) {
             // inject the text as input events
             clipboard_paste(im);
+            return;
+        }
+
+        if (im->fp && sc_clipboard_image_paste(im->fp)) {
+            // The clipboard contained an image: it has been pushed to the
+            // device Pictures folder. Do not inject Ctrl+v (it would paste
+            // the previous device clipboard content) nor forward the key
+            // event.
             return;
         }
 

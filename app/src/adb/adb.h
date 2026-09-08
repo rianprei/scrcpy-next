@@ -66,6 +66,13 @@ bool
 sc_adb_push(struct sc_intr *intr, const char *serial, const char *local,
             const char *remote, unsigned flags);
 
+/**
+ * Execute `adb shell mkdir -p <path>`
+ */
+bool
+sc_adb_shell_mkdir(struct sc_intr *intr, const char *serial, const char *path,
+                   unsigned flags);
+
 bool
 sc_adb_install(struct sc_intr *intr, const char *serial, const char *local,
                unsigned flags);
