@@ -990,6 +990,7 @@ aoa_complete:
             .orientation = options->display_orientation,
             .mipmaps = options->mipmaps,
             .hwdec_mode = options->hwdec_mode,
+            .vsync = options->vsync,
             .fullscreen = options->fullscreen,
             .start_fps_counter = options->start_fps_counter,
         };

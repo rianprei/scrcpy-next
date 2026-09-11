@@ -163,6 +163,7 @@ struct sc_screen_params {
     enum sc_render_fit render_fit;
     enum sc_orientation orientation;
     bool mipmaps;
+    bool vsync;
 
     enum sc_hwdec_mode hwdec_mode;
 

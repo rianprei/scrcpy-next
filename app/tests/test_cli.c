@@ -72,6 +72,7 @@ static void test_options(void) {
         "--window-height", "0",
         "--window-borderless",
         "--touchscreen-id=abc123",
+        "--vsync",
     };
 
     bool ok = scrcpy_parse_args(&args, ARRAY_LEN(argv), argv);
@@ -101,6 +102,7 @@ static void test_options(void) {
     assert(opts->window_height == 0);
     assert(opts->window_borderless);
     assert(!strcmp(opts->touchscreen_id, "abc123"));
+    assert(opts->vsync);
 }
 
 static void test_options2(void) {

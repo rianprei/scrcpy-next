@@ -122,6 +122,7 @@ enum {
     OPT_BACKGROUND_COLOR,
     OPT_RENDER_FIT,
     OPT_IGNORE_VIDEO_ENCODER_CONSTRAINTS,
+    OPT_VSYNC,
     OPT_NO_TERMINAL_TITLE,
     OPT_HWDEC,
     OPT_TOUCHSCREEN_ID,
@@ -1224,6 +1225,12 @@ static const struct sc_option options[] = {
         .text = "Select the video source (display or camera).\n"
                 "Camera mirroring requires Android 12+.\n"
                 "Default is display.",
+    },
+    {
+        .longopt_id = OPT_VSYNC,
+        .longopt = "vsync",
+        .text = "Enable vertical synchronization for the display renderer.\n"
+                "This may increase latency.",
     },
     {
         .shortopt = 'w',
@@ -3027,6 +3034,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             }
             case OPT_RENDER_DRIVER:
                 opts->render_driver = optarg;
+                break;
+            case OPT_VSYNC:
+                opts->vsync = true;
                 break;
             case OPT_NO_MIPMAPS:
                 opts->mipmaps = false;
