@@ -47,6 +47,7 @@ _<kbd>[Super]</kbd> is typically the <kbd>Windows</kbd> or <kbd>Cmd</kbd> key._
  | Rotate device screen                        | <kbd>MOD</kbd>+<kbd>r</kbd>
  | Expand notification panel                   | <kbd>MOD</kbd>+<kbd>n</kbd> \| _5th-click³_
  | Expand settings panel                       | <kbd>MOD</kbd>+<kbd>n</kbd>+<kbd>n</kbd> \| _Double-5th-click³_
+ | Expand settings panel (directly)            | <kbd>MOD</kbd>+<kbd>e</kbd>
  | Collapse panels                             | <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>n</kbd>
  | Copy to clipboard⁵                          | <kbd>MOD</kbd>+<kbd>c</kbd>
  | Cut to clipboard⁵                           | <kbd>MOD</kbd>+<kbd>x</kbd>

@@ -631,6 +631,14 @@ sc_input_manager_process_key(struct sc_input_manager *im,
                         }
                     }
                     return;
+                case SDLK_E:
+                    // Expand the settings panel directly (e.g. the control
+                    // center on devices with split panels), without expanding
+                    // the notification panel first.
+                    if (!repeat && down && !paused) {
+                        expand_settings_panel(im);
+                    }
+                    return;
                 case SDLK_N:
                     if (!repeat && down && !paused) {
                         if (shift) {
