@@ -133,6 +133,7 @@ enum {
     OPT_CONFIG_FILE,
     OPT_NO_CONFIG,
     OPT_RECONNECT,
+    OPT_SHOW_AXIS,
 };
 
 struct sc_option {
@@ -1082,6 +1083,12 @@ static const struct sc_option options[] = {
                 "    scrcpy --new-display --start-app=+org.mozilla.firefox\n"
                 "Both prefixes can be used, in that order:\n"
                 "    scrcpy --start-app=+?firefox",
+    },
+    {
+        .longopt_id = OPT_SHOW_AXIS,
+        .longopt = "show-axis",
+        .text = "Show numbered device pixel coordinates along the top and "
+                "left edges of the mirrored screen.",
     },
     {
         .shortopt = 't',
@@ -2999,6 +3006,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case 't':
                 opts->show_touches = true;
                 break;
+            case OPT_SHOW_AXIS:
+                opts->show_axis = true;
+                break;
             case OPT_ALWAYS_ON_TOP:
                 opts->always_on_top = true;
                 break;
@@ -3471,6 +3481,25 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         opts->video_playback = false;
         // Do not power on the device on start if video capture is disabled
         opts->power_on = false;
+    }
+
+    if (opts->show_axis) {
+        if (!opts->video_playback || otg) {
+            LOGE("--show-axis requires video playback in a window");
+            return false;
+        }
+        if (opts->video_source != SC_VIDEO_SOURCE_DISPLAY || opts->display_id
+                || opts->new_display || opts->crop || opts->angle
+                || opts->flex_display
+                || opts->capture_orientation != SC_ORIENTATION_0
+                || opts->capture_orientation_lock != SC_ORIENTATION_UNLOCKED
+                || opts->display_orientation != SC_ORIENTATION_0
+                || (opts->render_fit != SC_RENDER_FIT_AUTO
+                    && opts->render_fit != SC_RENDER_FIT_LETTERBOX)) {
+            LOGE("--show-axis requires the default physical screen without "
+                 "capture or display transformations");
+            return false;
+        }
     }
 
     if (!opts->audio) {

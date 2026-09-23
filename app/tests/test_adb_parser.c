@@ -352,6 +352,21 @@ static void test_adb_devices_unauthorized_with_spaces(void) {
     sc_adb_devices_destroy(&vec);
 }
 
+static void test_device_size(void) {
+    struct sc_size size;
+    bool ok = sc_adb_parse_device_size("Physical size: 1080x2400\r\n", &size);
+    assert(ok && size.width == 1080 && size.height == 2400);
+
+    ok = sc_adb_parse_device_size("Physical size: 1080x2400\n"
+                                  "Override size: 720x1600\n", &size);
+    assert(ok && size.width == 720 && size.height == 1600);
+
+    assert(!sc_adb_parse_device_size("Physical size: 0x2400", &size));
+    assert(!sc_adb_parse_device_size("Physical size: 99999x2400", &size));
+    assert(!sc_adb_parse_device_size("Override size: 720x1600garbage", &size));
+    assert(!sc_adb_parse_device_size("unknown", &size));
+}
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -378,6 +393,8 @@ int main(int argc, char *argv[]) {
     test_get_ip_no_wlan();
     test_get_ip_no_wlan_without_eol();
     test_get_ip_truncated();
+
+    test_device_size();
 
     return 0;
 }

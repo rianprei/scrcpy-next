@@ -336,6 +336,7 @@ struct scrcpy_options {
     bool mpris;
 #endif
     bool show_touches;
+    bool show_axis;
     bool fullscreen;
     bool keyboard_grab;
     bool always_on_top;

@@ -863,3 +863,30 @@ sc_adb_get_device_sdk_version(struct sc_intr *intr, const char *serial) {
 
     return value;
 }
+
+bool
+sc_adb_get_device_size(struct sc_intr *intr, const char *serial,
+                       struct sc_size *size) {
+    assert(serial);
+    const char *const argv[] =
+        SC_ADB_COMMAND("-s", serial, "shell", "wm", "size");
+
+    sc_pipe pout;
+    sc_pid pid = sc_adb_execute_p(argv, SC_ADB_SILENT, &pout);
+    if (pid == SC_PROCESS_NONE) {
+        return false;
+    }
+
+    char buf[256];
+    ssize_t r = sc_pipe_read_all_intr(intr, pid, pout, buf, sizeof(buf) - 1);
+    sc_pipe_close(pout);
+
+    bool ok = process_check_success_intr(intr, pid, "adb shell wm size",
+                                             SC_ADB_SILENT);
+    if (!ok || r <= 0 || r == sizeof(buf) - 1) {
+        return false;
+    }
+
+    buf[r] = '\0';
+    return sc_adb_parse_device_size(buf, size);
+}

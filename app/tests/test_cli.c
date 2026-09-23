@@ -195,6 +195,26 @@ static void test_camera_focus(void) {
     assert(!scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
 }
 
+static void test_show_axis(void) {
+    struct scrcpy_cli_args args = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv[] = {"scrcpy", "--show-axis", "--max-size=1024",
+                    "--no-control"};
+    bool ok = scrcpy_parse_args(&args, ARRAY_LEN(argv), argv);
+    assert(ok);
+    assert(args.opts.show_axis);
+    assert(args.opts.max_size == 1024);
+    assert(!args.opts.control);
+
+    struct scrcpy_cli_args invalid = {
+        .opts = scrcpy_options_default,
+    };
+    char *invalid_argv[] = {"scrcpy", "--show-axis", "--crop=100:200:0:0"};
+    ok = scrcpy_parse_args(&invalid, ARRAY_LEN(invalid_argv), invalid_argv);
+    assert(!ok);
+}
+
 static void test_parse_shortcut_mods(void) {
     uint8_t mods;
     bool ok;
@@ -280,6 +300,7 @@ int main(int argc, char *argv[]) {
     test_options2();
     test_camera_focus();
     test_mouse_bind_info();
+    test_show_axis();
     test_parse_shortcut_mods();
     test_preparse();
     test_profile();

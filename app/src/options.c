@@ -88,6 +88,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .mpris = false,
 #endif
     .show_touches = false,
+    .show_axis = false,
     .fullscreen = false,
     .keyboard_grab = false,
     .always_on_top = false,

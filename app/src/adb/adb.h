@@ -7,6 +7,7 @@
 #include <inttypes.h>
 
 #include "adb/adb_device.h"
+#include "coords.h"
 #include "util/intr.h"
 
 #define SC_ADB_NO_STDOUT (1 << 0)
@@ -137,5 +138,10 @@ sc_adb_get_device_ip(struct sc_intr *intr, const char *serial, unsigned flags);
  */
 uint16_t
 sc_adb_get_device_sdk_version(struct sc_intr *intr, const char *serial);
+
+/** Return the active device screen size from `adb shell wm size`. */
+bool
+sc_adb_get_device_size(struct sc_intr *intr, const char *serial,
+                       struct sc_size *size);
 
 #endif

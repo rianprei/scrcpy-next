@@ -16,6 +16,7 @@
 #include "util/sdl.h"
 
 #define DISPLAY_MARGINS 96
+#define AXIS_STEP 100
 
 #define DOWNCAST(SINK) container_of(SINK, struct sc_screen, frame_sink)
 
@@ -295,6 +296,94 @@ sc_screen_update_content_rect(struct sc_screen *screen) {
                          &screen->rect);
 }
 
+static void
+sc_screen_render_axis(struct sc_screen *screen, const SDL_FRect *geometry) {
+    if (geometry->w <= 0 || geometry->h <= 0) {
+        return;
+    }
+
+    struct sc_size size = screen->axis_size;
+    assert(size.width && size.height);
+
+    // The stream follows device rotation, while `wm size` uses natural
+    // orientation. The aspect ratio is preserved even if video is downscaled.
+    if ((screen->frame_size.width > screen->frame_size.height)
+            != (size.width > size.height)) {
+        uint16_t tmp = size.width;
+        size.width = size.height;
+        size.height = tmp;
+    }
+
+    SDL_Renderer *renderer = screen->renderer;
+    SDL_BlendMode old_blend_mode;
+    bool ok = SDL_GetRenderDrawBlendMode(renderer, &old_blend_mode);
+    if (!ok) {
+        LOGW("Could not get renderer blend mode: %s", SDL_GetError());
+        return;
+    }
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    float left = geometry->x + 0.5f;
+    float top = geometry->y + 0.5f;
+    float right = geometry->x + geometry->w - 0.5f;
+    float bottom = geometry->y + geometry->h - 0.5f;
+    float x_scale = geometry->w / size.width;
+    float y_scale = geometry->h / size.height;
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 170);
+    SDL_RenderLine(renderer, left, top, right, top);
+    SDL_RenderLine(renderer, left, top, left, bottom);
+
+    // Thin labels in a small window, but keep their device pixel values.
+    unsigned x_tick_stride = MAX(1, (unsigned) (5.f / (AXIS_STEP * x_scale)) + 1);
+    unsigned y_tick_stride = MAX(1, (unsigned) (5.f / (AXIS_STEP * y_scale)) + 1);
+    unsigned x_label_stride = MAX(1, (unsigned) (48.f / (AXIS_STEP * x_scale)) + 1);
+    unsigned y_label_stride = MAX(1, (unsigned) (18.f / (AXIS_STEP * y_scale)) + 1);
+
+    for (unsigned i = 1; i * AXIS_STEP < size.width; ++i) {
+        float x = left + i * AXIS_STEP * x_scale;
+        if (i % x_tick_stride == 0) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 180);
+            SDL_RenderLine(renderer, x, top, x, top + 7);
+        }
+        if (i % x_label_stride == 0 && x + 40 < right
+                && geometry->h >= 18) {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 220);
+            SDL_RenderDebugTextFormat(renderer, x + 3, top + 10,
+                                      "%u", i * AXIS_STEP);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 240);
+            SDL_RenderDebugTextFormat(renderer, x + 2, top + 9,
+                                      "%u", i * AXIS_STEP);
+        }
+    }
+
+    for (unsigned i = 1; i * AXIS_STEP < size.height; ++i) {
+        float y = top + i * AXIS_STEP * y_scale;
+        if (i % y_tick_stride == 0) {
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 180);
+            SDL_RenderLine(renderer, left, y, left + 7, y);
+        }
+        if (i % y_label_stride == 0 && y + 8 < bottom
+                && geometry->w >= 50) {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 220);
+            SDL_RenderDebugTextFormat(renderer, left + 11, y + 1,
+                                      "%u", i * AXIS_STEP);
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 240);
+            SDL_RenderDebugTextFormat(renderer, left + 10, y,
+                                      "%u", i * AXIS_STEP);
+        }
+    }
+
+    if (geometry->w >= 50 && geometry->h >= 18) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 220);
+        SDL_RenderDebugText(renderer, left + 11, top + 10, "0");
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 240);
+        SDL_RenderDebugText(renderer, left + 10, top + 9, "0");
+    }
+
+    SDL_SetRenderDrawBlendMode(renderer, old_blend_mode);
+}
+
 // render the texture to the renderer
 //
 // Set the update_content_rect flag if the window or content size may have
@@ -380,6 +469,11 @@ sc_screen_render(struct sc_screen *screen, bool update_content_rect) {
 
     if (!ok) {
         LOGE("Could not render texture: %s", SDL_GetError());
+    }
+
+    if (screen->show_axis && !screen->disconnected && ok
+            && screen->orientation == SC_ORIENTATION_0) {
+        sc_screen_render_axis(screen, &geometry);
     }
 
 end:
@@ -599,6 +693,8 @@ sc_screen_init(struct sc_screen *screen,
     screen->awaiting_first_frame = false;
     screen->keyboard_grab = params->keyboard_grab;
     screen->otg_automatic_screenshot = params->otg_automatic_screenshot;
+    screen->show_axis = params->show_axis;
+    screen->axis_size = params->axis_size;
 
     screen->bg.r = (params->background_color >> 16) & 0xFF;
     screen->bg.g = (params->background_color >> 8) & 0xFF;
@@ -1081,6 +1177,9 @@ sc_screen_set_orientation(struct sc_screen *screen,
 
     screen->orientation = orientation;
     LOGI("Display orientation set to %s", sc_orientation_get_name(orientation));
+    if (screen->show_axis && orientation != SC_ORIENTATION_0) {
+        LOGW("Pixel axes are hidden for rotated display orientation");
+    }
 
     sc_screen_render(screen, true);
 }

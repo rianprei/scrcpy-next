@@ -679,6 +679,13 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
     const char *serial = s->server.serial;
     assert(serial);
 
+    struct sc_size axis_size = {0, 0};
+    if (options->show_axis
+            && !sc_adb_get_device_size(NULL, serial, &axis_size)) {
+        LOGE("Could not read device screen size for --show-axis");
+        goto end;
+    }
+
     struct sc_file_pusher *fp = NULL;
 
     if (options->window && options->control) {
@@ -965,6 +972,8 @@ aoa_complete:
             .flex_display = options->flex_display,
             .reconnect = options->reconnect,
             .window = rc->window,
+            .show_axis = options->show_axis,
+            .axis_size = axis_size,
             .controller = controller,
             .fp = fp,
             .kp = kp,

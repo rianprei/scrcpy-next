@@ -48,6 +48,8 @@ struct sc_screen {
     bool awaiting_first_frame;
     bool keyboard_grab;
     bool otg_automatic_screenshot;
+    bool show_axis;
+    struct sc_size axis_size; // device screen size in natural orientation
 
     struct sc_controller *controller;
 
@@ -134,6 +136,8 @@ struct sc_screen_params {
     // existing shown window to reuse (its ownership is transferred to the
     // screen on success), or NULL to create a new one
     SDL_Window *window;
+    bool show_axis;
+    struct sc_size axis_size;
 
     struct sc_controller *controller;
     struct sc_file_pusher *fp;

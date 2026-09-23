@@ -34,6 +34,24 @@ behavior:
 scrcpy --no-window-aspect-ratio-lock
 ```
 
+## Pixel coordinate axes
+
+To show the device's pixel coordinates along the top and left edges of the
+mirrored screen:
+
+```bash
+scrcpy --show-axis
+```
+
+The origin is at the top left. Numbered ticks use the current device screen
+size reported by `adb shell wm size`, so they remain aligned if the window is
+resized or the video is downscaled. They follow normal device rotation.
+This helps estimate coordinates for `adb shell input tap X Y`.
+
+This option supports the default physical display without cropping, capture
+rotation, a custom display orientation or a virtual display. Rotating the
+scrcpy window with a shortcut hides the axes until its orientation is reset.
+
 ## Background color
 
 To maintain the device aspect ratio (when using `--no-window-aspect-ratio-lock`

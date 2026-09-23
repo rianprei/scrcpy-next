@@ -1,12 +1,58 @@
 #include "adb_parser.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
 #include "util/log.h"
 #include "util/str.h"
+
+static bool
+parse_wm_size(const char *line, struct sc_size *size) {
+    const char *sep = strchr(line, ':');
+    if (!sep) {
+        return false;
+    }
+
+    const char *p = sep + 1;
+    while (*p == ' ' || *p == '\t') {
+        ++p;
+    }
+
+    char *end;
+    unsigned long width = strtoul(p, &end, 10);
+    if (end == p || *end != 'x' || !width || width > UINT16_MAX) {
+        return false;
+    }
+
+    p = end + 1;
+    unsigned long height = strtoul(p, &end, 10);
+    if (end == p || !height || height > UINT16_MAX) {
+        return false;
+    }
+    while (*end == ' ' || *end == '\t') {
+        ++end;
+    }
+    if (*end != '\0' && *end != '\r' && *end != '\n') {
+        return false;
+    }
+
+    size->width = width;
+    size->height = height;
+    return true;
+}
+
+bool
+sc_adb_parse_device_size(const char *str, struct sc_size *size) {
+    // Input coordinates use the logical display size if it was overridden.
+    const char *line = strstr(str, "Override size:");
+    if (!line) {
+        line = strstr(str, "Physical size:");
+    }
+    return line && parse_wm_size(line, size);
+}
 
 static size_t
 rstrip_len(const char *s, size_t len) {
