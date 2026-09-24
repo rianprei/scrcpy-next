@@ -130,7 +130,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         }
 
         this.displayId = options.getDisplayId();
-        this.touchscreenId = options.getTouchscreenId();
+        this. = options.get();
         this.clipboardAutosync = options.getClipboardAutosync();
         this.powerOn = options.getPowerOn();
         this.keepActive = options.getKeepActive();
@@ -207,7 +207,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                     displayUniqueId = displayInfo.getUniqueId();
                 }
             }
-            uhidManager = new UhidManager(sender, displayUniqueId, options.getTouchscreenId());
+            uhidManager = new UhidManager(sender, displayUniqueId, touchscreenId);
         }
 
         return uhidManager;
