@@ -77,6 +77,10 @@ public final class UhidManager {
                 if (firstDevice) {
                     addUniqueIdAssociation();
                 }
+                else
+                {
+                    Ln.i("No device association needed");
+                }
                 registerUhidListener(id, fd);
             } catch (Exception e) {
                 close(fd);
