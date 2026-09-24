@@ -120,6 +120,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
 
         if (this.camera) {
             // Unused for camera
+            this.touchscreenId = null;
             this.displayId = Device.DISPLAY_ID_NONE;
             this.supportsInputEvents = false;
             this.sender = null;
