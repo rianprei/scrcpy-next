@@ -289,7 +289,8 @@ public final class UhidManager {
             ServiceManager.getInputManager().removeUniqueIdAssociationByPort(INPUT_PORT);
         }
         if (touchscreenId != null) {
-            ServiceManager.getInputManager().removeUniqueIdAssociationByDescriptor(touchscreenId, displayUniqueId);
+            Ln.i("Associating touchscreen " + touchscreenId + " to display " + displayUniqueId);
+            ServiceManager.getInputManager().removeUniqueIdAssociationByDescriptor(touchscreenId);
         }
     }
 }
