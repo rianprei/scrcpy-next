@@ -94,6 +94,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private final boolean clipboardAutosync;
     private final boolean powerOn;
     private final boolean keepActive;
+    private final String touchscreenId;
 
     private final KeyCharacterMap charMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
 
@@ -129,7 +130,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         }
 
         this.displayId = options.getDisplayId();
-
+        this.touchscreenId = options.getTouchscreenId();
         this.clipboardAutosync = options.getClipboardAutosync();
         this.powerOn = options.getPowerOn();
         this.keepActive = options.getKeepActive();
@@ -206,7 +207,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                     displayUniqueId = displayInfo.getUniqueId();
                 }
             }
-            uhidManager = new UhidManager(sender, displayUniqueId);
+            uhidManager = new UhidManager(sender, displayUniqueId, options.getTouchscreenId());
         }
 
         return uhidManager;
