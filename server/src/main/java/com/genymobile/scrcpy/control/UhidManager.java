@@ -36,6 +36,7 @@ public final class UhidManager {
     private static final String INPUT_PORT = "scrcpy:" + Os.getpid();
 
     private final String displayUniqueId;
+    private final String touchscreenId;
 
     private final ArrayMap<Integer, FileDescriptor> fds = new ArrayMap<>();
     private final ByteBuffer buffer = ByteBuffer.allocate(SIZE_OF_UHID_EVENT).order(ByteOrder.nativeOrder());
@@ -43,9 +44,10 @@ public final class UhidManager {
     private final DeviceMessageSender sender;
     private final MessageQueue queue;
 
-    public UhidManager(DeviceMessageSender sender, String displayUniqueId) {
+    public UhidManager(DeviceMessageSender sender, String displayUniqueId, String touchscreenId) {
         this.sender = sender;
         this.displayUniqueId = displayUniqueId;
+        this.touchscreenId = touchscreenId;
         if (Build.VERSION.SDK_INT >= AndroidVersions.API_23_ANDROID_6_0) {
             HandlerThread thread = new HandlerThread("UHidManager");
             thread.start();
@@ -277,11 +279,17 @@ public final class UhidManager {
         if (mustUseInputPort()) {
             ServiceManager.getInputManager().addUniqueIdAssociationByPort(INPUT_PORT, displayUniqueId);
         }
+        if (touchscreenId != null) {
+            ServiceManager.getInputManager().addUniqueIdAssociationByDescriptor(touchscreenId, displayUniqueId);
+        }
     }
 
     private void removeUniqueIdAssociation() {
         if (mustUseInputPort()) {
             ServiceManager.getInputManager().removeUniqueIdAssociationByPort(INPUT_PORT);
+        }
+        if (touchscreenId != null) {
+            ServiceManager.getInputManager().removeUniqueIdAssociationByDescriptor(touchscreenId, displayUniqueId);
         }
     }
 }
