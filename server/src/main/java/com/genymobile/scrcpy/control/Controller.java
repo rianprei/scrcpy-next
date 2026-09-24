@@ -130,7 +130,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         }
 
         this.displayId = options.getDisplayId();
-        this. = options.get();
+        this.touchscreenId = options.getTouchscreenId();
         this.clipboardAutosync = options.getClipboardAutosync();
         this.powerOn = options.getPowerOn();
         this.keepActive = options.getKeepActive();
