@@ -27,6 +27,8 @@ public final class InputManager {
     private static Method setActionButtonMethod;
     private static Method addUniqueIdAssociationByPortMethod;
     private static Method removeUniqueIdAssociationByPortMethod;
+    private static Method addUniqueIdAssociationByDescriptorMethod;
+    private static Method removeUniqueIdAssociationByDescriptorMethod;
 
     static InputManager create() {
         android.hardware.input.InputManager manager = (android.hardware.input.InputManager) FakeContext.get()
@@ -126,6 +128,28 @@ public final class InputManager {
         }
     }
 
+    private static Method getAddUniqueIdAssociationByDescriptorMethod() throws NoSuchMethodException {
+        if (addUniqueIdAssociationByDescriptorMethod == null) {
+            addUniqueIdAssociationByDescriptorMethod =
+                android.hardware.input.InputManager.class.getMethod(
+                        "addUniqueIdAssociationByDescriptor",
+                        String.class,
+                        String.class
+                );
+        }
+        return addUniqueIdAssociationByDescriptorMethod;
+    }
+
+    @TargetApi(AndroidVersions.API_35_ANDROID_15)
+    public void addUniqueIdAssociationByDescriptor(String inputDeviceDescriptor, String uniqueId) {
+        try {
+            Method method = getAddUniqueIdAssociationByDescriptorMethod();
+            method.invoke(manager, inputDeviceDescriptor, uniqueId);
+        } catch (ReflectiveOperationException e) {
+            Ln.e("Cannot add unique id association by descriptor", e);
+        }
+    }
+
     private static Method getRemoveUniqueIdAssociationByPortMethod() throws NoSuchMethodException {
         if (removeUniqueIdAssociationByPortMethod == null) {
             removeUniqueIdAssociationByPortMethod = android.hardware.input.InputManager.class.getMethod(
@@ -141,6 +165,27 @@ public final class InputManager {
             method.invoke(manager, inputPort);
         } catch (ReflectiveOperationException e) {
             Ln.e("Cannot remove unique id association by port", e);
+        }
+    }
+
+    private static Method getRemoveUniqueIdAssociationByDescriptorMethod() throws NoSuchMethodException {
+        if (removeUniqueIdAssociationByDescriptorMethod == null) {
+            removeUniqueIdAssociationByDescriptorMethod =
+                android.hardware.input.InputManager.class.getMethod(
+                        "removeUniqueIdAssociationByDescriptor",
+                        String.class
+                );
+        }
+    return removeUniqueIdAssociationByDescriptorMethod;
+    }
+
+    @TargetApi(AndroidVersions.API_35_ANDROID_15)
+    public void removeUniqueIdAssociationByDescriptor(String inputDeviceDescriptor) {
+        try {
+            Method method = getRemoveUniqueIdAssociationByDescriptorMethod();
+            method.invoke(manager, inputDeviceDescriptor);
+        } catch (ReflectiveOperationException e) {
+            Ln.e("Cannot remove unique id association by descriptor", e);
         }
     }
 }
