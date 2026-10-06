@@ -31,7 +31,6 @@ public final class DesktopConnection implements Closeable {
     private final ControlChannel controlChannel;
 
     private LocalSocket clientAudioSocket;
-    //private final FileDescriptor micFd;
 
     private DesktopConnection(LocalSocket videoSocket, LocalSocket audioSocket, LocalSocket controlSocket, LocalSocket clientAudioSocket)
             throws IOException {
@@ -43,7 +42,6 @@ public final class DesktopConnection implements Closeable {
         videoFd = videoSocket != null ? videoSocket.getFileDescriptor() : null;
         audioFd = audioSocket != null ? audioSocket.getFileDescriptor() : null;
         controlChannel = controlSocket != null ? new ControlChannel(controlSocket) : null;
-        //micFd = clientAudioSocket != null ? clientAudioSocket.getFileDescriptor() : null;
     }
 
     private static LocalSocket connect(String abstractName) throws IOException {
@@ -212,17 +210,26 @@ public final class DesktopConnection implements Closeable {
         return audioFd;
     }
 
-    public LocalSocket getClientAudioSocket() {
+    public synchronized LocalSocket getClientAudioSocket() {
         return clientAudioSocket;
     }
 
-    /** Close only the optional client-audio lane while screen, device audio and
-     * control continue. Idempotent because an injection failure races normal
-     * connection teardown. */
+    /**
+     * Close only the client audio socket, while video, audio and control continue.
+     * <p>
+     * Idempotent, because an injection failure may race with the normal connection teardown.
+     */
     public synchronized void closeClientAudio() throws IOException {
         LocalSocket socket = clientAudioSocket;
         clientAudioSocket = null;
         if (socket != null) {
+            try {
+                // Wake up a thread blocked in read()
+                socket.shutdownInput();
+                socket.shutdownOutput();
+            } catch (IOException e) {
+                // The socket may already be shut down
+            }
             socket.close();
         }
     }
