@@ -5,6 +5,8 @@ import com.genymobile.scrcpy.FakeContext;
 import com.genymobile.scrcpy.display.DisplayInfo;
 import com.genymobile.scrcpy.model.DeviceApp;
 import com.genymobile.scrcpy.util.Ln;
+import com.genymobile.scrcpy.util.Settings;
+import com.genymobile.scrcpy.util.SettingsException;
 import com.genymobile.scrcpy.wrappers.ActivityManager;
 import com.genymobile.scrcpy.wrappers.ClipboardManager;
 import com.genymobile.scrcpy.wrappers.DisplayControl;
@@ -202,7 +204,7 @@ public final class Device {
 
         WindowManager wm = ServiceManager.getWindowManager();
 
-        boolean accelerometerRotation = !wm.isRotationFrozen(displayId);
+        boolean accelerometerRotation = isAutoRotationEnabled(wm, displayId);
 
         int currentRotation = getCurrentRotation(displayId);
         int newRotation = (currentRotation & 1) ^ 1; // 0->1, 1->0, 2->1, 3->0
@@ -215,6 +217,30 @@ public final class Device {
         if (accelerometerRotation) {
             wm.thawRotation(displayId);
         }
+    }
+
+    /**
+     * Return whether the user enabled auto-rotation.
+     * <p>
+     * For the main display, read the user preference from the settings: {@code WindowManager#isRotationFrozen()} may
+     * wrongly return false (when the reflective call fails or on customized vendor ROMs), which would make
+     * {@code thawRotation()} cancel the user rotation lock.
+     */
+    private static boolean isAutoRotationEnabled(WindowManager wm, int displayId) {
+        if (displayId != 0) {
+            // The setting only reflects the main display rotation mode
+            return !wm.isRotationFrozen(displayId);
+        }
+        try {
+            String value = Settings.getValue(Settings.TABLE_SYSTEM, "accelerometer_rotation");
+            if (value != null) {
+                return Integer.parseInt(value) != 0;
+            }
+            Ln.w("No accelerometer_rotation setting, fallback to isRotationFrozen()");
+        } catch (SettingsException | NumberFormatException e) {
+            Ln.w("Could not read accelerometer_rotation setting: " + e + ", fallback to isRotationFrozen()");
+        }
+        return !wm.isRotationFrozen(displayId);
     }
 
     private static int getCurrentRotation(int displayId) {
