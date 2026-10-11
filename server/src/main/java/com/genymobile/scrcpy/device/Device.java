@@ -4,9 +4,8 @@ import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.FakeContext;
 import com.genymobile.scrcpy.display.DisplayInfo;
 import com.genymobile.scrcpy.model.DeviceApp;
+import com.genymobile.scrcpy.util.Command;
 import com.genymobile.scrcpy.util.Ln;
-import com.genymobile.scrcpy.util.Settings;
-import com.genymobile.scrcpy.util.SettingsException;
 import com.genymobile.scrcpy.wrappers.ActivityManager;
 import com.genymobile.scrcpy.wrappers.ClipboardManager;
 import com.genymobile.scrcpy.wrappers.DisplayControl;
@@ -29,6 +28,7 @@ import android.view.InputEvent;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -222,9 +222,9 @@ public final class Device {
     /**
      * Return whether the user enabled auto-rotation.
      * <p>
-     * For the main display, read the user preference from the settings: {@code WindowManager#isRotationFrozen()} may
-     * wrongly return false (when the reflective call fails or on customized vendor ROMs), which would make
-     * {@code thawRotation()} cancel the user rotation lock.
+     * For the main display, query the current user's settings. The content provider wrapper reads user 0, which may
+     * differ from the active user. Never fall back to {@code WindowManager#isRotationFrozen()} on a read failure:
+     * its reflective call may also fail and return false, causing {@code thawRotation()} to cancel the rotation lock.
      */
     private static boolean isAutoRotationEnabled(WindowManager wm, int displayId) {
         if (displayId != 0) {
@@ -232,15 +232,22 @@ public final class Device {
             return !wm.isRotationFrozen(displayId);
         }
         try {
-            String value = Settings.getValue(Settings.TABLE_SYSTEM, "accelerometer_rotation");
-            if (value != null) {
-                return Integer.parseInt(value) != 0;
+            String value = Command.execReadLine("settings", "--user", "current", "get", "system", "accelerometer_rotation");
+            if (!"0".equals(value) && !"1".equals(value)) {
+                Ln.w("Unknown accelerometer_rotation setting: " + value + ", keeping rotation locked");
             }
-            Ln.w("No accelerometer_rotation setting, fallback to isRotationFrozen()");
-        } catch (SettingsException | NumberFormatException e) {
-            Ln.w("Could not read accelerometer_rotation setting: " + e + ", fallback to isRotationFrozen()");
+            return isAutoRotationEnabled(value);
+        } catch (IOException e) {
+            Ln.w("Could not read accelerometer_rotation setting: " + e + ", keeping rotation locked");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Ln.w("Interrupted while reading accelerometer_rotation setting, keeping rotation locked");
         }
-        return !wm.isRotationFrozen(displayId);
+        return false;
+    }
+
+    static boolean isAutoRotationEnabled(String value) {
+        return "1".equals(value);
     }
 
     private static int getCurrentRotation(int displayId) {
