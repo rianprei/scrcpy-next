@@ -1368,9 +1368,14 @@ sc_input_manager_handle_event(struct sc_input_manager *im,
         case SDL_EVENT_FINGER_UP:
         case SDL_EVENT_FINGER_CANCELED:
             if (event->tfinger.touchID == SDL_MOUSE_TOUCHID) {
-                // Computer trackpad (only delivered with --trackpad, which
-                // enables SDL_HINT_MOUSE_TOUCH_EVENTS)
-                if (im->trackpad) {
+                // Only delivered with --trackpad, which enables
+                // SDL_HINT_MOUSE_TOUCH_EVENTS. That hint also makes SDL
+                // synthesize a finger from every mouse click; those carry the
+                // window id, whereas real trackpad touches have none (macOS
+                // reports them without a window). Drop the synthetic ones, or
+                // a click with a finger resting on the trackpad looks like a
+                // second finger and starts a gesture instead of a tap.
+                if (im->trackpad && event->tfinger.windowID == 0) {
                     sc_input_manager_process_trackpad(im, &event->tfinger);
                 }
                 break;
