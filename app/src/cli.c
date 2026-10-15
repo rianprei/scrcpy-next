@@ -42,6 +42,7 @@ enum {
     OPT_NO_KEY_REPEAT,
     OPT_LEGACY_PASTE,
     OPT_CLIENT_AUDIO_SOURCE,
+    OPT_TRACKPAD,
     OPT_VIDEO_ENCODER,
     OPT_POWER_OFF_ON_CLOSE,
     OPT_V4L2_SINK,
@@ -504,6 +505,16 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_KILL_ADB_ON_CLOSE,
         .longopt = "kill-adb-on-close",
         .text = "Kill adb when scrcpy terminates.",
+    },
+    {
+        .longopt_id = OPT_TRACKPAD,
+        .longopt = "trackpad",
+        .text = "Turn two-finger gestures on the computer trackpad into two "
+                "touch pointers on the device, anchored at the mouse cursor: "
+                "pinch to zoom, rotate, and two-finger slides in any "
+                "direction.\n"
+                "Only available with --mouse=sdk (the default). Mouse wheel "
+                "events are ignored while a two-finger gesture is active.",
     },
     {
         .longopt_id = OPT_LEGACY_PASTE,
@@ -2858,6 +2869,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_LEGACY_PASTE:
                 opts->legacy_paste = true;
+                break;
+            case OPT_TRACKPAD:
+                opts->trackpad = true;
                 break;
             case OPT_POWER_OFF_ON_CLOSE:
                 opts->power_off_on_close = true;

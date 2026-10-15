@@ -712,6 +712,7 @@ sc_screen_init(struct sc_screen *screen,
         .camera = params->camera,
         .mouse_bindings = params->mouse_bindings,
         .legacy_paste = params->legacy_paste,
+        .trackpad = params->trackpad,
         .clipboard_autosync = params->clipboard_autosync,
         .shortcut_mods = params->shortcut_mods,
     };

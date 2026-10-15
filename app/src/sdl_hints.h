@@ -6,7 +6,8 @@
 #include <SDL3/SDL_hints.h>
 
 void
-sc_sdl_set_hints(const char *render_driver, bool disable_screensaver);
+sc_sdl_set_hints(const char *render_driver, bool disable_screensaver,
+                 bool trackpad);
 
 #endif
 

@@ -36,6 +36,21 @@ struct sc_input_manager {
     bool vfinger_invert_x;
     bool vfinger_invert_y;
 
+    // --trackpad: two fingers on the computer trackpad drive two device
+    // pointers anchored at the mouse cursor (see input_manager.c).
+    bool trackpad;
+    struct {
+        bool active;            // two-pointer gesture in progress
+        unsigned count;         // trackpad fingers currently down
+        SDL_FingerID ids[2];    // the two tracked fingers
+        float x[2];             // normalized [0;1] positions on the trackpad
+        float y[2];
+        float cx0;              // centroid at gesture start
+        float cy0;
+        struct sc_point anchor; // cursor position (frame coords) at gesture start
+        float gain;             // frame pixels per normalized trackpad unit
+    } tp;
+
     uint8_t mouse_buttons_state; // OR of enum sc_mouse_button values
 
     // Tracks the number of identical consecutive shortcut key down events.
@@ -61,6 +76,7 @@ struct sc_input_manager_params {
 
     struct sc_mouse_bindings mouse_bindings;
     bool legacy_paste;
+    bool trackpad;
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
 };

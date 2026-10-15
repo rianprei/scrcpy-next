@@ -96,6 +96,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .disable_screensaver = false,
     .forward_key_repeat = true,
     .legacy_paste = false,
+    .trackpad = false,
     .power_off_on_close = false,
     .clipboard_autosync = true,
     .downsize_on_error = true,

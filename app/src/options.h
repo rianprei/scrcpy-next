@@ -341,6 +341,7 @@ struct scrcpy_options {
     bool disable_screensaver;
     bool forward_key_repeat;
     bool legacy_paste;
+    bool trackpad;
     bool power_off_on_close;
     bool clipboard_autosync;
     bool downsize_on_error;

@@ -3,7 +3,17 @@
 #include "util/log.h"
 
 void
-sc_sdl_set_hints(const char *render_driver, bool disable_screensaver) {
+sc_sdl_set_hints(const char *render_driver, bool disable_screensaver,
+                 bool trackpad) {
+    if (trackpad) {
+        // Deliver computer trackpad touches as finger events (touch id
+        // SDL_MOUSE_TOUCHID) in addition to the normal mouse events, so that
+        // two-finger gestures can be forwarded to the device.
+        if (!SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1")) {
+            LOGW("Could not enable trackpad touch events");
+        }
+    }
+
     if (render_driver && !SDL_SetHint(SDL_HINT_RENDER_DRIVER, render_driver)) {
         LOGW("Could not set render driver");
     }

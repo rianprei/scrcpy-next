@@ -85,7 +85,7 @@ scrcpy_otg(struct scrcpy_options *options) {
         }
     }
 
-    sc_sdl_set_hints(options->render_driver, options->disable_screensaver);
+    sc_sdl_set_hints(options->render_driver, options->disable_screensaver, false);
 
     // Minimal SDL initialization
     if (!SDL_Init(SDL_INIT_EVENTS)) {

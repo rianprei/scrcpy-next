@@ -1,5 +1,7 @@
 #include "input_manager.h"
 
+#include <inttypes.h>
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +42,15 @@ sc_input_manager_init(struct sc_input_manager *im,
     im->vfinger_down = false;
     im->vfinger_invert_x = false;
     im->vfinger_invert_y = false;
+
+    // Trackpad gestures need absolute positions, so they are only available
+    // with the SDK mouse processor (not in relative mode: uhid/aoa).
+    im->trackpad = params->trackpad && im->mp && !im->mp->relative_mode;
+    if (params->trackpad && !im->trackpad) {
+        LOGW("--trackpad is only available with --mouse=sdk, ignoring");
+    }
+    im->tp.active = false;
+    im->tp.count = 0;
 
     im->mouse_buttons_state = 0;
 
@@ -376,9 +387,9 @@ sc_input_manager_process_text_input(struct sc_input_manager *im,
 }
 
 static bool
-simulate_virtual_finger(struct sc_input_manager *im,
-                        enum android_motionevent_action action,
-                        struct sc_point point) {
+inject_finger(struct sc_input_manager *im,
+              enum android_motionevent_action action,
+              struct sc_point point, uint64_t pointer_id) {
     bool up = action == AMOTION_EVENT_ACTION_UP;
 
     struct sc_control_msg msg;
@@ -386,17 +397,160 @@ simulate_virtual_finger(struct sc_input_manager *im,
     msg.inject_touch_event.action = action;
     msg.inject_touch_event.position.screen_size = im->screen->frame_size;
     msg.inject_touch_event.position.point = point;
-    msg.inject_touch_event.pointer_id = SC_POINTER_ID_VIRTUAL_FINGER;
+    msg.inject_touch_event.pointer_id = pointer_id;
     msg.inject_touch_event.pressure = up ? 0.0f : 1.0f;
     msg.inject_touch_event.action_button = 0;
     msg.inject_touch_event.buttons = 0;
 
     if (!sc_controller_push_msg(im->controller, &msg)) {
-        LOGW("Could not request 'inject virtual finger event'");
+        LOGW("Could not request 'inject finger event'");
         return false;
     }
 
     return true;
+}
+
+static bool
+simulate_virtual_finger(struct sc_input_manager *im,
+                        enum android_motionevent_action action,
+                        struct sc_point point) {
+    return inject_finger(im, action, point, SC_POINTER_ID_VIRTUAL_FINGER);
+}
+
+// Trackpad gestures (--trackpad)
+//
+// On macOS, SDL reports trackpad touches as finger events with touch id
+// SDL_MOUSE_TOUCHID (once SDL_HINT_MOUSE_TOUCH_EVENTS is enabled), with
+// positions normalized over the trackpad surface. While exactly two fingers
+// are down, they drive two device pointers:
+//
+//     pointer_i = anchor + (finger_i - centroid_at_start) * gain
+//
+// where anchor is the cursor position when the second finger landed. Moving
+// both fingers together slides, spreading them zooms, turning them rotates,
+// all at the cursor rather than at the screen center.
+
+static struct sc_point
+trackpad_pointer_position(struct sc_input_manager *im, unsigned i) {
+    struct sc_size frame = im->screen->frame_size;
+    float fx = im->tp.anchor.x + (im->tp.x[i] - im->tp.cx0) * im->tp.gain;
+    float fy = im->tp.anchor.y + (im->tp.y[i] - im->tp.cy0) * im->tp.gain;
+    int32_t x = (int32_t) fx;
+    int32_t y = (int32_t) fy;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (frame.width && x > (int32_t) frame.width - 1) x = frame.width - 1;
+    if (frame.height && y > (int32_t) frame.height - 1) y = frame.height - 1;
+    return (struct sc_point) {x, y};
+}
+
+static void
+trackpad_send(struct sc_input_manager *im,
+              enum android_motionevent_action action) {
+    inject_finger(im, action, trackpad_pointer_position(im, 0),
+                  SC_POINTER_ID_TRACKPAD_FINGER_A);
+    inject_finger(im, action, trackpad_pointer_position(im, 1),
+                  SC_POINTER_ID_TRACKPAD_FINGER_B);
+}
+
+static void
+trackpad_gesture_start(struct sc_input_manager *im) {
+    im->tp.cx0 = (im->tp.x[0] + im->tp.x[1]) / 2;
+    im->tp.cy0 = (im->tp.y[0] + im->tp.y[1]) / 2;
+
+    float mouse_x;
+    float mouse_y;
+    SDL_GetMouseState(&mouse_x, &mouse_y);
+    im->tp.anchor = sc_screen_convert_window_to_frame_coords(im->screen,
+                                                             mouse_x, mouse_y);
+    // The whole trackpad width maps to the whole frame width
+    im->tp.gain = (float) im->screen->frame_size.width;
+    im->tp.active = true;
+    LOGD("trackpad gesture start: anchor=(%" PRIi32 ",%" PRIi32 ") gain=%.0f",
+         im->tp.anchor.x, im->tp.anchor.y, im->tp.gain);
+    trackpad_send(im, AMOTION_EVENT_ACTION_DOWN);
+}
+
+static void
+trackpad_gesture_end(struct sc_input_manager *im) {
+    if (!im->tp.active) {
+        return;
+    }
+    trackpad_send(im, AMOTION_EVENT_ACTION_UP);
+    im->tp.active = false;
+    LOGD("trackpad gesture end");
+}
+
+static int
+trackpad_finger_index(struct sc_input_manager *im, SDL_FingerID id) {
+    for (unsigned i = 0; i < im->tp.count && i < 2; ++i) {
+        if (im->tp.ids[i] == id) {
+            return (int) i;
+        }
+    }
+    return -1;
+}
+
+static void
+sc_input_manager_process_trackpad(struct sc_input_manager *im,
+                                  const SDL_TouchFingerEvent *event) {
+    if (im->camera || !im->mp || im->screen->paused || im->disconnected) {
+        trackpad_gesture_end(im);
+        im->tp.count = 0;
+        return;
+    }
+
+    switch (event->type) {
+        case SDL_EVENT_FINGER_DOWN:
+            if (trackpad_finger_index(im, event->fingerID) >= 0) {
+                return; // duplicate
+            }
+            if (im->tp.count < 2) {
+                unsigned i = im->tp.count++;
+                im->tp.ids[i] = event->fingerID;
+                im->tp.x[i] = event->x;
+                im->tp.y[i] = event->y;
+                if (im->tp.count == 2) {
+                    trackpad_gesture_start(im);
+                }
+            } else {
+                // A third finger: stop the gesture, resume when back to two
+                im->tp.count++;
+                trackpad_gesture_end(im);
+            }
+            break;
+        case SDL_EVENT_FINGER_MOTION: {
+            int i = trackpad_finger_index(im, event->fingerID);
+            if (i < 0) {
+                return;
+            }
+            im->tp.x[i] = event->x;
+            im->tp.y[i] = event->y;
+            if (im->tp.active) {
+                trackpad_send(im, AMOTION_EVENT_ACTION_MOVE);
+            }
+            break;
+        }
+        case SDL_EVENT_FINGER_UP:
+        case SDL_EVENT_FINGER_CANCELED: {
+            trackpad_gesture_end(im);
+            int i = trackpad_finger_index(im, event->fingerID);
+            if (i >= 0) {
+                // keep the other tracked finger in slot 0
+                if (i == 0 && im->tp.count >= 2) {
+                    im->tp.ids[0] = im->tp.ids[1];
+                    im->tp.x[0] = im->tp.x[1];
+                    im->tp.y[0] = im->tp.y[1];
+                }
+            }
+            if (im->tp.count) {
+                im->tp.count--;
+            }
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 static struct sc_point
@@ -1037,6 +1191,12 @@ sc_input_manager_process_mouse_wheel(struct sc_input_manager *im,
         return;
     }
 
+    if (im->tp.active) {
+        // The two-finger slide is already injected as two pointers; the
+        // wheel events macOS derives from the same gesture must not scroll too
+        return;
+    }
+
     // mouse_x and mouse_y are expressed in pixels relative to the window
     float mouse_x;
     float mouse_y;
@@ -1206,6 +1366,18 @@ sc_input_manager_handle_event(struct sc_input_manager *im,
         case SDL_EVENT_FINGER_MOTION:
         case SDL_EVENT_FINGER_DOWN:
         case SDL_EVENT_FINGER_UP:
+        case SDL_EVENT_FINGER_CANCELED:
+            if (event->tfinger.touchID == SDL_MOUSE_TOUCHID) {
+                // Computer trackpad (only delivered with --trackpad, which
+                // enables SDL_HINT_MOUSE_TOUCH_EVENTS)
+                if (im->trackpad) {
+                    sc_input_manager_process_trackpad(im, &event->tfinger);
+                }
+                break;
+            }
+            if (event->type == SDL_EVENT_FINGER_CANCELED) {
+                break;
+            }
             sc_input_manager_process_touch(im, &event->tfinger);
             break;
         case SDL_EVENT_GAMEPAD_ADDED:

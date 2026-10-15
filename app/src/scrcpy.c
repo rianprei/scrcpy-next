@@ -543,7 +543,8 @@ scrcpy(struct scrcpy_options *options) {
 
     // Set hints before starting the server thread to avoid race conditions in
     // SDL
-    sc_sdl_set_hints(options->render_driver, options->disable_screensaver);
+    sc_sdl_set_hints(options->render_driver, options->disable_screensaver,
+                     options->trackpad);
 
     if (!sc_server_start(&s->server)) {
         goto end;
@@ -893,6 +894,7 @@ aoa_complete:
             .gp = gp,
             .mouse_bindings = options->mouse_bindings,
             .legacy_paste = options->legacy_paste,
+            .trackpad = options->trackpad,
             .clipboard_autosync = options->clipboard_autosync,
             .shortcut_mods = options->shortcut_mods,
             .window_title = window_title,
