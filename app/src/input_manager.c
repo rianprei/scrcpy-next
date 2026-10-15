@@ -527,7 +527,15 @@ sc_input_manager_process_trackpad(struct sc_input_manager *im,
             im->tp.x[i] = event->x;
             im->tp.y[i] = event->y;
             if (im->tp.active) {
-                trackpad_send(im, AMOTION_EVENT_ACTION_MOVE);
+                // Move only the finger that moved. The server builds every
+                // MotionEvent from the current position of all pointers, so
+                // one message per finger update is enough; sending both
+                // pointers per update doubled the event rate and paired each
+                // fresh position with a stale one, which jittered the gesture.
+                inject_finger(im, AMOTION_EVENT_ACTION_MOVE,
+                              trackpad_pointer_position(im, (unsigned) i),
+                              i == 0 ? SC_POINTER_ID_TRACKPAD_FINGER_A
+                                     : SC_POINTER_ID_TRACKPAD_FINGER_B);
             }
             break;
         }
