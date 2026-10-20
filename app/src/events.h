@@ -23,6 +23,7 @@ enum {
     SC_EVENT_DISCONNECTED_ICON_LOADED,
     SC_EVENT_DISCONNECTED_TIMEOUT,
     SC_EVENT_RAISE_WINDOW,
+    SC_EVENT_RECONNECT_PROBE_DONE,
 };
 
 bool
@@ -47,5 +48,9 @@ sc_run_on_main_thread(sc_runnable_fn run, void *userdata, bool wait_complete);
 // Reject new runnables after this call
 void
 sc_main_thread_stop(void);
+
+// Accept new runnables again after sc_main_thread_stop()
+void
+sc_main_thread_restart(void);
 
 #endif

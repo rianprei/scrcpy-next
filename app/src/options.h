@@ -367,6 +367,7 @@ struct scrcpy_options {
     const char *client_audio_source;
     bool require_audio;
     bool kill_adb_on_close;
+    bool reconnect;
     bool camera_high_speed;
     bool camera_no_autofocus;
 #define SC_OPTION_LIST_ENCODERS 0x1

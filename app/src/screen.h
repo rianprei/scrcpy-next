@@ -40,6 +40,12 @@ struct sc_screen {
     bool window_aspect_ratio_lock;
     bool flex_display;
     sc_tick disconnect_timeout;
+    bool reconnect;
+    // false once the window has been released to the caller
+    bool owns_window;
+    // the window is reused from a previous session and no frame has been
+    // received yet
+    bool awaiting_first_frame;
 
     struct sc_controller *controller;
 
@@ -121,6 +127,11 @@ struct sc_screen_params {
     bool video;
     bool camera;
     bool flex_display;
+    bool reconnect;
+
+    // existing shown window to reuse (its ownership is transferred to the
+    // screen on success), or NULL to create a new one
+    SDL_Window *window;
 
     struct sc_controller *controller;
     struct sc_file_pusher *fp;
@@ -182,6 +193,11 @@ sc_screen_destroy(struct sc_screen *screen);
 // screen_destroy()
 void
 sc_screen_hide_window(struct sc_screen *screen);
+
+// transfer the window ownership to the caller, so that sc_screen_destroy()
+// does not destroy it (it may be reused by a new screen)
+SDL_Window *
+sc_screen_release_window(struct sc_screen *screen);
 
 // toggle the fullscreen mode
 void

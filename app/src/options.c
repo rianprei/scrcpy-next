@@ -121,6 +121,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .client_audio_source = NULL,
     .require_audio = false,
     .kill_adb_on_close = false,
+    .reconnect = false,
     .camera_high_speed = false,
     .camera_no_autofocus = false,
     .list = 0,
