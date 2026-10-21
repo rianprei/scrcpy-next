@@ -58,6 +58,9 @@ struct sc_screen {
     // When true, a frame size change must not cause the window to be resized
     bool prevent_auto_resize; // protected by mutex
 
+    // Identifier of the frame waiting in the frame buffer (latency stats)
+    uint64_t pending_frame_id; // protected by mutex
+
     // The initial requested window properties
     struct {
         int16_t x;

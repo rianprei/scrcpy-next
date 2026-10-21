@@ -22,6 +22,7 @@
 #include "file_pusher.h"
 #include "hwdec.h"
 #include "keyboard_sdk.h"
+#include "latency_stats.h"
 #include "mouse_sdk.h"
 #include "recorder.h"
 #include "screen.h"
@@ -416,6 +417,7 @@ scrcpy(struct scrcpy_options *options) {
 #endif
     bool controller_initialized = false;
     bool controller_started = false;
+    bool latency_stats_initialized = false;
     bool screen_initialized = false;
     bool timeout_initialized = false;
     bool timeout_started = false;
@@ -604,7 +606,8 @@ scrcpy(struct scrcpy_options *options) {
         // If a video buffer is present, then the recv date must be set
         bool set_recv_date = has_video_buffer;
         sc_demuxer_init(&s->video_demuxer, "video", s->server.video_socket,
-                        set_recv_date, &video_demuxer_cbs, NULL);
+                        set_recv_date, options->latency_stats,
+                        &video_demuxer_cbs, NULL);
     }
 
     if (options->audio) {
@@ -612,7 +615,7 @@ scrcpy(struct scrcpy_options *options) {
             .on_ended = sc_audio_demuxer_on_ended,
         };
         sc_demuxer_init(&s->audio_demuxer, "audio", s->server.audio_socket,
-                        false, &audio_demuxer_cbs, options);
+                        false, false, &audio_demuxer_cbs, options);
     }
 
     static const struct sc_decoder_callbacks decoder_cbs = {
@@ -965,6 +968,17 @@ aoa_complete:
     // Now that the header values have been consumed, the socket(s) will
     // receive the stream(s). Start the demuxer(s).
 
+    if (options->latency_stats) {
+        if (!sc_latency_stats_init()) {
+            goto end;
+        }
+        latency_stats_initialized = true;
+
+        if (!sc_latency_stats_start()) {
+            goto end;
+        }
+    }
+
     if (options->video) {
         if (!sc_demuxer_start(&s->video_demuxer)) {
             goto end;
@@ -1180,6 +1194,12 @@ end:
     if (screen_initialized) {
         sc_screen_join(&s->screen);
         sc_screen_destroy(&s->screen);
+    }
+
+    if (latency_stats_initialized) {
+        sc_latency_stats_stop();
+        sc_latency_stats_join();
+        sc_latency_stats_destroy();
     }
 
     if (controller_started) {

@@ -6,6 +6,7 @@
 
 #include "events.h"
 #include "icon.h"
+#include "latency_stats.h"
 #include "options.h"
 #include "util/log.h"
 #include "util/sdl.h"
@@ -482,19 +483,29 @@ sc_screen_frame_sink_push(struct sc_frame_sink *sink, const AVFrame *frame) {
     struct sc_screen *screen = DOWNCAST(sink);
     assert(screen->video);
 
+    // Frame identifier attached by the decoder (0 if not instrumented)
+    uint64_t frame_id = (uint64_t) (uintptr_t) frame->opaque;
+
     sc_mutex_lock(&screen->mutex);
     bool previous_skipped = sc_frame_buffer_has_frame(&screen->fb);
     bool ok = sc_frame_buffer_push(&screen->fb, frame);
     screen->prevent_auto_resize = screen->current_session.video.client_resized;
+    uint64_t dropped_frame_id = screen->pending_frame_id;
+    screen->pending_frame_id = frame_id;
     sc_mutex_unlock(&screen->mutex);
     if (!ok) {
         return SC_SINK_KO;
     }
 
+    sc_latency_stats_received(frame_id);
+
     if (previous_skipped) {
         sc_fps_counter_add_skipped_frame(&screen->fps_counter);
         // The SC_EVENT_NEW_FRAME triggered for the previous frame will consume
         // this new frame instead
+        if (sc_latency_stats_enabled()) {
+            sc_latency_stats_present(dropped_frame_id, sc_tick_now(), true);
+        }
     } else {
         // Post the event on the UI thread
         bool ok = sc_push_event(SC_EVENT_NEW_FRAME);
@@ -957,6 +968,14 @@ sc_screen_apply_frame(struct sc_screen *screen, bool can_resize) {
     sc_fps_counter_add_rendered_frame(&screen->fps_counter);
 
     AVFrame *frame = screen->frame;
+
+    // The frame is presented: record the presentation time (same point as the
+    // FPS counter of scrcpy)
+    if (sc_latency_stats_enabled()) {
+        sc_latency_stats_present((uint64_t) (uintptr_t) frame->opaque,
+                                 sc_tick_now(), false);
+    }
+
     struct sc_size new_frame_size = {frame->width, frame->height};
 
     if (!new_frame_size.width || !new_frame_size.height) {

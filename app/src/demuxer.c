@@ -5,6 +5,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavutil/channel_layout.h>
 
+#include "latency_stats.h"
 #include "packet_merger.h"
 #include "util/binary.h"
 #include "util/log.h"
@@ -166,6 +167,14 @@ sc_demuxer_recv_packet(struct sc_demuxer *demuxer, const uint8_t *header,
         }
 
         *(sc_tick *) packet->opaque_ref->data = recv_date;
+    }
+
+    if (demuxer->track_latency && !(pts_flags & SC_PACKET_FLAG_CONFIG)) {
+        // Attach the frame identifier to the packet: it is carried over to the
+        // decoded frame, so that the reception, the decoding and the
+        // presentation of a frame can be correlated.
+        uint64_t id = sc_latency_stats_recv(sc_tick_now());
+        packet->opaque = (void *) (uintptr_t) id;
     }
 
     if (pts_flags & SC_PACKET_FLAG_CONFIG) {
@@ -350,7 +359,7 @@ end:
 
 void
 sc_demuxer_init(struct sc_demuxer *demuxer, const char *name, sc_socket socket,
-                bool set_recv_date,
+                bool set_recv_date, bool track_latency,
                 const struct sc_demuxer_callbacks *cbs, void *cbs_userdata) {
     assert(socket != SC_SOCKET_NONE);
 
@@ -359,6 +368,7 @@ sc_demuxer_init(struct sc_demuxer *demuxer, const char *name, sc_socket socket,
     sc_packet_source_init(&demuxer->packet_source);
 
     demuxer->set_recv_date = set_recv_date;
+    demuxer->track_latency = track_latency;
 
     assert(cbs && cbs->on_ended);
 

@@ -6,6 +6,7 @@
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
 
+#include "latency_stats.h"
 #include "util/log.h"
 
 /** Downcast packet_sink to decoder */
@@ -195,6 +196,14 @@ sc_decoder_process_packet(struct sc_decoder *decoder, const AVPacket *packet) {
     // Do not decode more packets before the frame sinks are ready
     sc_frame_source_sinks_apply_backpressure(&decoder->frame_source);
 
+    // Frame identifier attached by the demuxer (0 if not instrumented)
+    uint64_t frame_id = 0;
+    sc_tick decode_start = 0;
+    if (sc_latency_stats_enabled()) {
+        frame_id = (uint64_t) (uintptr_t) packet->opaque;
+        decode_start = sc_tick_now();
+    }
+
     int ret = avcodec_send_packet(decoder->ctx, packet);
 
     if (ret < 0 && ret != AVERROR(EAGAIN)) {
@@ -233,6 +242,15 @@ sc_decoder_process_packet(struct sc_decoder *decoder, const AVPacket *packet) {
 
         // a frame was received
         decoder->frame_decoded = true;
+
+        if (sc_latency_stats_enabled()) {
+            // Record the decoding time and carry the frame identifier over to
+            // the frame, so that the presentation can be correlated with the
+            // packet it comes from.
+            sc_tick decode_end = sc_tick_now();
+            sc_latency_stats_decode(frame_id, decode_start, decode_end);
+            decoder->frame->opaque = (void *) (uintptr_t) frame_id;
+        }
 
         if (decoder->ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
             assert(decoder->frame->width >= 0);

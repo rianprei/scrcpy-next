@@ -14,6 +14,7 @@ struct sc_demuxer {
 
     const char *name; // must be statically allocated (e.g. a string literal)
     bool set_recv_date;
+    bool track_latency;
 
     sc_socket socket;
     sc_thread thread;
@@ -36,7 +37,7 @@ struct sc_demuxer_callbacks {
 // The name must be statically allocated (e.g. a string literal)
 void
 sc_demuxer_init(struct sc_demuxer *demuxer, const char *name, sc_socket socket,
-                bool set_recv_date,
+                bool set_recv_date, bool track_latency,
                 const struct sc_demuxer_callbacks *cbs, void *cbs_userdata);
 
 bool
