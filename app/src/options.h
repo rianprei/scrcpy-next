@@ -349,6 +349,7 @@ struct scrcpy_options {
     bool select_tcpip;
     bool cleanup;
     bool start_fps_counter;
+    bool latency_stats;
     bool power_on;
     bool video;
     bool audio;

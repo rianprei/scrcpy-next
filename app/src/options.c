@@ -104,6 +104,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .select_usb = false,
     .cleanup = true,
     .start_fps_counter = false,
+    .latency_stats = false,
     .power_on = true,
     .video = true,
     .audio = true,

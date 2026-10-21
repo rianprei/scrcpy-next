@@ -55,6 +55,7 @@ enum {
     OPT_OTG,
     OPT_NO_CLEANUP,
     OPT_PRINT_FPS,
+    OPT_LATENCY_STATS,
     OPT_NO_POWER_ON,
     OPT_VIDEO_CODEC,
     OPT_NO_AUDIO,
@@ -783,6 +784,24 @@ static const struct sc_option options[] = {
         .longopt = "print-fps",
         .text = "Start FPS counter, to print framerate logs to the console. "
                 "It can be started or stopped at any time with MOD+i.",
+    },
+    {
+        .longopt_id = OPT_LATENCY_STATS,
+        .longopt = "latency-stats",
+        .text = "Print per-stage latency statistics once per second.\n"
+                "One line per second:\n"
+                "  LAT recv->present p50/p95/p99   delay between the "
+                "reception of a video packet and the presentation (or the "
+                "discard) of the corresponding frame\n"
+                "  LAT decode p50/p95/p99          duration of the decoding of "
+                "a frame\n"
+                "  LAT jitter p50/p95              delay between two "
+                "consecutive video packet arrivals\n"
+                "  fps, dropped, received          number of frames, in the "
+                "last second\n"
+                "All the durations are in milliseconds, measured on the host "
+                "monotonic clock. They do not include the capture, the "
+                "encoding and the scanout on the device.",
     },
     {
         .longopt_id = OPT_PUSH_TARGET,
@@ -2815,6 +2834,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_PRINT_FPS:
                 opts->start_fps_counter = true;
                 break;
+            case OPT_LATENCY_STATS:
+                opts->latency_stats = true;
+                break;
             case OPT_VIDEO_CODEC:
                 if (!parse_video_codec(optarg, &opts->video_codec)) {
                     return false;
@@ -3540,6 +3562,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     if (opts->start_fps_counter && !opts->video_playback) {
         LOGW("--print-fps has no effect without video playback");
         opts->start_fps_counter = false;
+    }
+
+    if (opts->latency_stats && !opts->video_playback) {
+        LOGW("--latency-stats has no effect without video playback");
+        opts->latency_stats = false;
     }
 
     if (otg) {
