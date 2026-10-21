@@ -16,3 +16,11 @@ endif
 if get_option('compile_server')
     subdir('server')
 endif
+
+# The client binary is built in the "app" subdirectory, so it is copied to the
+# root of the build directory, to be run as "build/scrcpy".
+custom_target('scrcpy-bin',
+              input: scrcpy_exe,
+              output: 'scrcpy',
+              command: ['cp', '@INPUT@', '@OUTPUT@'],
+              build_by_default: true)

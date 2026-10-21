@@ -24,6 +24,7 @@ src = [
     'src/icon.c',
     'src/input_manager.c',
     'src/keyboard_sdk.c',
+    'src/latency_stats.c',
     'src/mouse_capture.c',
     'src/mouse_sdk.c',
     'src/opengl.c',
@@ -235,7 +236,7 @@ configure_file(configuration: conf, output: 'config.h')
 
 src_dir = include_directories('src')
 
-executable('scrcpy', src,
+scrcpy_exe = executable('scrcpy', src,
            dependencies: dependencies,
            include_directories: src_dir,
            install: true,
