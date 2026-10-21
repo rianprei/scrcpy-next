@@ -12,11 +12,11 @@
  *
  *   - reception: the video packet has been fully read from the socket;
  *   - decoding: the decoder thread produced the corresponding frame;
- *   - presentation: the frame has been applied to the texture and rendered
- *     (or discarded without being presented).
+ *   - application: the frame has been applied to the texture, before the
+ *     render (or discarded without being applied).
  *
- * The reported "recv->present" delay is the time between the reception of a
- * packet and the presentation (or the discard) of the frame it produced. It
+ * The reported "recv->apply" delay is the time between the reception of a
+ * packet and the application (or the discard) of the frame it produced. It
  * does not include the capture, the encoding and the scanout on the device.
  *
  * The instrumentation is disabled by default. When enabled, it never

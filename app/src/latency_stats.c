@@ -154,7 +154,7 @@ print_window(void) {
     double p50_jt = percentile(stats.jitter, stats.nb_jitter, 0.50);
     double p95_jt = percentile(stats.jitter, stats.nb_jitter, 0.95);
 
-    LOGI("LAT recv->present p50=%.2f p95=%.2f p99=%.2f "
+    LOGI("LAT recv->apply p50=%.2f p95=%.2f p99=%.2f "
          "decode p50=%.2f p95=%.2f p99=%.2f "
          "jitter p50=%.2f p95=%.2f "
          "fps=%.1f dropped=%" PRIu32 " received=%" PRIu32 " (ms)",

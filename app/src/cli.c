@@ -790,9 +790,10 @@ static const struct sc_option options[] = {
         .longopt = "latency-stats",
         .text = "Print per-stage latency statistics once per second.\n"
                 "One line per second:\n"
-                "  LAT recv->present p50/p95/p99   delay between the "
-                "reception of a video packet and the presentation (or the "
-                "discard) of the corresponding frame\n"
+                "  LAT recv->apply p50/p95/p99   delay between the "
+                "reception of a video packet and the moment the "
+                "corresponding frame is applied to the texture (before the "
+                "render), or discarded\n"
                 "  LAT decode p50/p95/p99          duration of the decoding of "
                 "a frame\n"
                 "  LAT jitter p50/p95              delay between two "
