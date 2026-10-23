@@ -168,6 +168,10 @@ public final class Server {
 
             Looper.loop(); // interrupted by the Completion implementation
         } finally {
+            startShutdownWatchdog(() -> {
+                Ln.w("Server shutdown timed out, forcing exit");
+                android.os.Process.killProcess(android.os.Process.myPid());
+            });
             if (cleanUp != null) {
                 cleanUp.interrupt();
             }
@@ -192,6 +196,21 @@ public final class Server {
 
             connection.close();
         }
+    }
+
+    static Thread startShutdownWatchdog(Runnable onTimeout) {
+        Thread watchdog = new Thread(() -> {
+            try {
+                // A broken codec may ignore EOS and block shutdown indefinitely.
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                return;
+            }
+            onTimeout.run();
+        }, "shutdown-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+        return watchdog;
     }
 
     private static void prepareMainLooper() {
