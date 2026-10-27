@@ -163,6 +163,9 @@ static int
 run_controller(void *data) {
     struct sc_controller *controller = data;
 
+    // Input events must reach the device as soon as possible
+    sc_thread_set_priority(SC_THREAD_PRIORITY_HIGH);
+
     bool error = false;
 
     for (;;) {

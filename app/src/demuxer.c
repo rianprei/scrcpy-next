@@ -195,6 +195,10 @@ static int
 run_demuxer(void *data) {
     struct sc_demuxer *demuxer = data;
 
+    // This thread receives and decodes the stream (the packet sinks are called
+    // synchronously): do not let other host load delay it
+    sc_thread_set_priority(SC_THREAD_PRIORITY_HIGH);
+
     // Flag to report end-of-stream (i.e. device disconnected)
     enum sc_demuxer_status status = SC_DEMUXER_STATUS_ERROR;
 
