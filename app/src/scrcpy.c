@@ -476,6 +476,7 @@ scrcpy(struct scrcpy_options *options) {
         .tcpip_dst = options->tcpip_dst,
         .cleanup = options->cleanup,
         .power_on = options->power_on,
+        .latency_stats = options->latency_stats,
         .kill_adb_on_close = options->kill_adb_on_close,
         .camera_high_speed = options->camera_high_speed,
         .camera_torch = options->camera_torch,

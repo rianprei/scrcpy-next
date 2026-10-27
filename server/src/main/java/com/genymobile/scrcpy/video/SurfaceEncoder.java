@@ -46,6 +46,7 @@ public class SurfaceEncoder implements AsyncProcessor {
     private final boolean downsizeOnError;
     private final int minSizeAlignment;
     private final boolean ignoreVideoEncoderConstraints;
+    private final EncodeLatencyStats latencyStats;
 
     private boolean firstFrameSent;
     private int consecutiveErrors;
@@ -68,6 +69,7 @@ public class SurfaceEncoder implements AsyncProcessor {
         this.downsizeOnError = options.getDownsizeOnError();
         this.minSizeAlignment = options.getMinSizeAlignment();
         this.ignoreVideoEncoderConstraints = options.getIgnoreVideoEncoderConstraints();
+        this.latencyStats = options.getLatencyStats() ? new EncodeLatencyStats() : null;
     }
 
     private void streamCapture() throws IOException, ConfigurationException {
@@ -264,6 +266,9 @@ public class SurfaceEncoder implements AsyncProcessor {
                         // If this is not a config packet, then it contains a frame
                         firstFrameSent = true;
                         consecutiveErrors = 0;
+                        if (latencyStats != null) {
+                            latencyStats.onFrame(bufferInfo.presentationTimeUs);
+                        }
                     }
 
                     ByteBuffer codecBuffer = codec.getOutputBuffer(outputBufferId);

@@ -63,6 +63,7 @@ public class Options {
     private boolean downsizeOnError = true;
     private boolean cleanup = true;
     private boolean powerOn = true;
+    private boolean latencyStats;
 
     private NewDisplay newDisplay;
     private boolean vdDestroyContent = true;
@@ -245,6 +246,10 @@ public class Options {
 
     public boolean getPowerOn() {
         return powerOn;
+    }
+
+    public boolean getLatencyStats() {
+        return latencyStats;
     }
 
     public NewDisplay getNewDisplay() {
@@ -467,6 +472,9 @@ public class Options {
                     break;
                 case "power_on":
                     options.powerOn = Boolean.parseBoolean(value);
+                    break;
+                case "latency_stats":
+                    options.latencyStats = Boolean.parseBoolean(value);
                     break;
                 case "list_encoders":
                     options.listEncoders = Boolean.parseBoolean(value);

@@ -802,7 +802,11 @@ static const struct sc_option options[] = {
                 "last second\n"
                 "All the durations are in milliseconds, measured on the host "
                 "monotonic clock. They do not include the capture, the "
-                "encoding and the scanout on the device.",
+                "encoding and the scanout on the device.\n"
+                "The server also prints one line per second:\n"
+                "  ENC capture->out p50/p95/p99/max   delay between the "
+                "capture of a frame and its output by the encoder, measured "
+                "on the device monotonic clock",
     },
     {
         .longopt_id = OPT_PUSH_TARGET,
