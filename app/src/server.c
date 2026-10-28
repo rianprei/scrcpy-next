@@ -427,6 +427,10 @@ execute_server(struct sc_server *server,
         VALIDATE_STRING(params->new_display);
         ADD_PARAM("new_display=%s", params->new_display);
     }
+    if (params->touchscreen_id) {
+        VALIDATE_STRING(params->touchscreen_id);
+        ADD_PARAM("touchscreen_id=%s", params->touchscreen_id);
+    }
     if (params->flex_display) {
         ADD_PARAM("flex_display=true");
     }

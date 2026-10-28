@@ -77,10 +77,6 @@ public final class UhidManager {
                 if (firstDevice) {
                     addUniqueIdAssociation();
                 }
-                else
-                {
-                    Ln.i("No device association needed");
-                }
                 registerUhidListener(id, fd);
             } catch (Exception e) {
                 close(fd);
@@ -284,7 +280,7 @@ public final class UhidManager {
             ServiceManager.getInputManager().addUniqueIdAssociationByPort(INPUT_PORT, displayUniqueId);
         }
         if (touchscreenId != null) {
-             Ln.i("Associating touchscreen " + touchscreenId + " to display " + displayUniqueId);
+            Ln.i("Associating touchscreen " + touchscreenId + " to display " + displayUniqueId);
             ServiceManager.getInputManager().addUniqueIdAssociationByDescriptor(touchscreenId, displayUniqueId);
         }
     }

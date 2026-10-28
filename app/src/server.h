@@ -52,6 +52,7 @@ struct sc_server_params {
     bool control;
     uint32_t display_id;
     const char *new_display;
+    const char *touchscreen_id;
     enum sc_display_ime_policy display_ime_policy;
     bool video;
     bool audio;

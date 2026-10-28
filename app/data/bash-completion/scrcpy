@@ -99,6 +99,7 @@ _scrcpy() {
         --tcpip
         --tcpip=
         --time-limit=
+        --touchscreen-id=
         --tunnel-host=
         --tunnel-port=
         --v4l2-buffer=

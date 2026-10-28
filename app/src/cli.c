@@ -114,6 +114,7 @@ enum {
     OPT_IGNORE_VIDEO_ENCODER_CONSTRAINTS,
     OPT_NO_TERMINAL_TITLE,
     OPT_HWDEC,
+    OPT_TOUCHSCREEN_ID,
     OPT_LIST_CLIENT_AUDIO_SOURCES,
     OPT_STREAM_SINK,
 };
@@ -975,6 +976,16 @@ static const struct sc_option options[] = {
         .longopt = "time-limit",
         .argdesc = "seconds",
         .text = "Set the maximum mirroring time, in seconds.",
+    },
+    {
+        .longopt_id = OPT_TOUCHSCREEN_ID,
+        .longopt = "touchscreen-id",
+        .argdesc = "descriptor",
+        .text = "Associate a touchscreen connected to the device (identified "
+                "by its input device descriptor, see \"adb shell dumpsys "
+                "input\") with the display mirrored by scrcpy, so that its "
+                "touches are routed to that display (typically a display "
+                "created by --new-display).",
     },
     {
         .longopt_id = OPT_TUNNEL_HOST,
@@ -3084,6 +3095,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_NO_TERMINAL_TITLE:
                 opts->update_terminal_title = false;
+                break;
+            case OPT_TOUCHSCREEN_ID:
+                opts->touchscreen_id = optarg;
                 break;
             case OPT_HWDEC:
                 if (!parse_hwdec_mode(optarg, &opts->hwdec_mode)) {
