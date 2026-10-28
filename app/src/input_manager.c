@@ -99,6 +99,11 @@ action_app_switch(struct sc_input_manager *im, enum sc_action action) {
 }
 
 static inline void
+action_info(struct sc_input_manager *im, enum sc_action action) {
+    send_keycode(im, AKEYCODE_INFO, action, "INFO");
+}
+
+static inline void
 action_power(struct sc_input_manager *im, enum sc_action action) {
     send_keycode(im, AKEYCODE_POWER, action, "POWER");
 }
@@ -1073,6 +1078,11 @@ sc_input_manager_process_mouse_button(struct sc_input_manager *im,
             case SC_MOUSE_BINDING_APP_SWITCH:
                 if (im->kp) {
                     action_app_switch(im, action);
+                }
+                return;
+            case SC_MOUSE_BINDING_INFO:
+                if (im->kp) {
+                    action_info(im, action);
                 }
                 return;
             case SC_MOUSE_BINDING_EXPAND_NOTIFICATION_PANEL:

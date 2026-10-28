@@ -652,6 +652,7 @@ static const struct sc_option options[] = {
                 " 'h': trigger shortcut HOME\n"
                 " 's': trigger shortcut APP_SWITCH\n"
                 " 'n': trigger shortcut \"expand notification panel\"\n"
+                " 'i': press the INFO key (Android TV)\n"
                 "Default is 'bhsn:++++' for SDK mouse, and '++++:bhsn' for AOA "
                 "and UHID.",
     },
@@ -2529,9 +2530,12 @@ parse_mouse_binding(char c, enum sc_mouse_binding *b) {
         case 'n':
             *b = SC_MOUSE_BINDING_EXPAND_NOTIFICATION_PANEL;
             return true;
+        case 'i':
+            *b = SC_MOUSE_BINDING_INFO;
+            return true;
         default:
             LOGE("Invalid mouse binding: '%c' "
-                 "(expected '+', '-', 'b', 'h', 's' or 'n')", c);
+                 "(expected '+', '-', 'b', 'h', 's', 'n' or 'i')", c);
             return false;
     }
 }
@@ -2562,7 +2566,7 @@ parse_mouse_bindings(const char *s, struct sc_mouse_bindings *mb) {
     // either "xxxx" or "xxxx:xxxx"
     if (len != 4 && (len != 9 || s[4] != ':')) {
         LOGE("Invalid mouse bindings: '%s' (expected 'xxxx' or 'xxxx:xxxx', "
-             "with each 'x' being in {'+', '-', 'b', 'h', 's', 'n'})", s);
+             "with each 'x' being in {'+', '-', 'b', 'h', 's', 'n', 'i'})", s);
         return false;
     }
 

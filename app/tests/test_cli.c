@@ -127,6 +127,15 @@ static void test_options2(void) {
     assert(opts->record_format == SC_RECORD_FORMAT_MP4);
 }
 
+static void test_mouse_bind_info(void) {
+    struct scrcpy_cli_args args = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv[] = {"scrcpy", "--mouse-bind=bhsi"};
+    assert(scrcpy_parse_args(&args, ARRAY_LEN(argv), argv));
+    assert(args.opts.mouse_bindings.pri.click5 == SC_MOUSE_BINDING_INFO);
+}
+
 static void test_camera_focus(void) {
     struct scrcpy_cli_args args = {
         .opts = scrcpy_options_default,
@@ -229,6 +238,7 @@ int main(int argc, char *argv[]) {
     test_options();
     test_options2();
     test_camera_focus();
+    test_mouse_bind_info();
     test_parse_shortcut_mods();
     test_preparse();
     test_profile();
