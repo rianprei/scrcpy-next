@@ -326,6 +326,12 @@ Default is "disabled".
 Kill adb when scrcpy terminates.
 
 .TP
+.B \-\-latency\-stats
+Print per-stage latency statistics once per second ("LAT" lines): recv->apply (delay between the reception of a video packet and the moment the corresponding frame is applied to the texture, or discarded), decode duration and jitter (delay between two consecutive video packet arrivals), as p50/p95/p99 in milliseconds on the host monotonic clock, plus fps, dropped and received frame counts.
+
+The server also prints one "ENC capture->out" line per second (p50/p95/p99/max delay between the capture of a frame and its output by the encoder, on the device clock). They do not include the scanout on the device or the computer.
+
+.TP
 .B \-\-legacy\-paste
 Inject computer clipboard text as a sequence of key events on Ctrl+v (like MOD+Shift+v).
 
