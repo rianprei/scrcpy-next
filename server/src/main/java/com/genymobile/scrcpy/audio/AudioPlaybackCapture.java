@@ -70,8 +70,14 @@ public final class AudioPlaybackCapture implements AudioCapture {
             }
 
             // audioMixingRuleBuilder.voiceCommunicationCaptureAllowed(true);
-            Method voiceCommunicationCaptureAllowedMethod = audioMixingRuleBuilderClass.getMethod("voiceCommunicationCaptureAllowed", boolean.class);
-            voiceCommunicationCaptureAllowedMethod.invoke(audioMixingRuleBuilder, true);
+            try {
+                Method voiceCommunicationCaptureAllowedMethod = audioMixingRuleBuilderClass.getMethod("voiceCommunicationCaptureAllowed",
+                        boolean.class);
+                voiceCommunicationCaptureAllowedMethod.invoke(audioMixingRuleBuilder, true);
+            } catch (NoSuchMethodException e) {
+                // Some ROMs do not expose this hidden method: capture the other usages anyway
+                Ln.w("Voice communication capture not supported on this device");
+            }
 
             // AudioMixingRule audioMixingRule = builder.build();
             Object audioMixingRule = audioMixingRuleBuilderClass.getMethod("build").invoke(audioMixingRuleBuilder);
