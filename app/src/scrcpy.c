@@ -31,6 +31,7 @@
 #ifdef HAVE_CLIENT_AUDIO
 # include "client_audio.h"
 #endif
+#include "stream_sink.h"
 #include "uhid/gamepad_uhid.h"
 #include "uhid/keyboard_uhid.h"
 #include "uhid/mouse_uhid.h"
@@ -66,6 +67,7 @@ struct scrcpy {
     struct sc_hwdec hwdec;
     struct sc_recorder recorder;
     struct sc_video_regulator video_regulator;
+    struct sc_stream_sink stream_sink;
 #ifdef HAVE_V4L2
     struct sc_v4l2_sink v4l2_sink;
     struct sc_video_regulator v4l2_regulator;
@@ -403,6 +405,8 @@ scrcpy(struct scrcpy_options *options) {
     bool file_pusher_initialized = false;
     bool recorder_initialized = false;
     bool recorder_started = false;
+    bool stream_sink_initialized = false;
+    bool stream_sink_started = false;
 #ifdef HAVE_V4L2
     bool v4l2_sink_initialized = false;
     bool v4l2_regulator_initialized = false;
@@ -661,6 +665,28 @@ scrcpy(struct scrcpy_options *options) {
         if (options->audio) {
             sc_packet_source_add_sink(&s->audio_demuxer.packet_source,
                                       &s->recorder.audio_packet_sink);
+        }
+    }
+
+    if (options->stream_sink) {
+        if (!sc_stream_sink_init(&s->stream_sink, options->stream_sink,
+                                 options->video, options->audio)) {
+            goto end;
+        }
+        stream_sink_initialized = true;
+
+        if (!sc_stream_sink_start(&s->stream_sink)) {
+            goto end;
+        }
+        stream_sink_started = true;
+
+        if (options->video) {
+            sc_packet_source_add_sink(&s->video_demuxer.packet_source,
+                                      &s->stream_sink.video_packet_sink);
+        }
+        if (options->audio) {
+            sc_packet_source_add_sink(&s->audio_demuxer.packet_source,
+                                      &s->stream_sink.audio_packet_sink);
         }
     }
 
@@ -1120,6 +1146,9 @@ end:
     if (recorder_initialized) {
         sc_recorder_stop(&s->recorder);
     }
+    if (stream_sink_initialized) {
+        sc_stream_sink_stop(&s->stream_sink);
+    }
     if (screen_initialized) {
         sc_screen_interrupt(&s->screen);
     }
@@ -1253,6 +1282,13 @@ end:
     }
     if (recorder_initialized) {
         sc_recorder_destroy(&s->recorder);
+    }
+
+    if (stream_sink_started) {
+        sc_stream_sink_join(&s->stream_sink);
+    }
+    if (stream_sink_initialized) {
+        sc_stream_sink_destroy(&s->stream_sink);
     }
 
     if (file_pusher_initialized) {

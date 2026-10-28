@@ -33,6 +33,7 @@ src = [
     'src/receiver.c',
     'src/recorder.c',
     'src/scrcpy.c',
+    'src/stream_sink.c',
     'src/screen.c',
     'src/sdl_hints.c',
     'src/server.c',
