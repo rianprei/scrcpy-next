@@ -878,9 +878,12 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             for (int i = 0; i < count; i++) {
                 Match match = matches.get(i);
                 int lpad = countW - ((int) Math.log10(i + 1) + 1);
-                sb.append("\n")
-                    .append(" ".repeat(lpad))
-                    .append(i + 1)
+                sb.append("\n");
+                for (int k = 0; k < lpad; ++k) {
+                    // String.repeat() requires API 33
+                    sb.append(' ');
+                }
+                sb.append(i + 1)
                     .append(". ")
                     .append(match.app.getName())
                     .append(" [")

@@ -3,6 +3,7 @@ package com.genymobile.scrcpy.video;
 import com.genymobile.scrcpy.util.Ln;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * Per-second statistics of the delay between frame capture and encoder output, on the device.
@@ -46,7 +47,7 @@ public final class EncodeLatencyStats {
             return;
         }
         Arrays.sort(samples, 0, count);
-        Ln.i(String.format("ENC capture->out p50=%.2f p95=%.2f p99=%.2f max=%.2f n=%d out_of_range=%d (ms)", percentile(50), percentile(95),
+        Ln.i(String.format(Locale.ROOT, "ENC capture->out p50=%.2f p95=%.2f p99=%.2f max=%.2f n=%d out_of_range=%d (ms)", percentile(50), percentile(95),
                 percentile(99), samples[count - 1] / 1000.0, count, dropped));
     }
 
