@@ -39,6 +39,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Range;
+import android.util.Rational;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
@@ -77,6 +78,13 @@ public class CameraCapture extends SurfaceCapture {
     private final boolean initialTorch;
     private final boolean noAutofocus;
     private final float focusDistance;
+    private final int iso;
+    private final long exposureUs;
+    private final float ev;
+    private final boolean aeLock;
+    private final boolean awbLock;
+    private final boolean ois;
+    private final boolean eis;
     private float zoom;
 
     private VideoConstraints videoConstraints;
@@ -117,6 +125,13 @@ public class CameraCapture extends SurfaceCapture {
         this.initialTorch = options.getCameraTorch();
         this.noAutofocus = options.getCameraNoAutofocus();
         this.focusDistance = options.getCameraFocusDistance();
+        this.iso = options.getCameraIso();
+        this.exposureUs = options.getCameraExposureUs();
+        this.ev = options.getCameraEv();
+        this.aeLock = options.getCameraAeLock();
+        this.awbLock = options.getCameraAwbLock();
+        this.ois = options.getCameraOis();
+        this.eis = options.getCameraEis();
         this.zoom = options.getCameraZoom();
     }
 
@@ -363,6 +378,7 @@ public class CameraCapture extends SurfaceCapture {
                     if (noAutofocus || !Float.isNaN(focusDistance)) {
                         configureManualFocus(requestBuilder);
                     }
+                    configureExposureAndStabilization(requestBuilder);
 
                     CaptureRequest request = requestBuilder.build();
                     setRepeatingRequest(session, request);
@@ -504,6 +520,97 @@ public class CameraCapture extends SurfaceCapture {
             return future.get();
         } catch (ExecutionException e) {
             throw (CameraAccessException) e.getCause();
+        }
+    }
+
+    private static boolean contains(int[] values, int value) {
+        if (values != null) {
+            for (int v : values) {
+                if (v == value) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void configureExposureAndStabilization(CaptureRequest.Builder requestBuilder) throws CameraAccessException {
+        if (iso == 0 && Float.isNaN(ev) && !aeLock && !awbLock && !ois && !eis) {
+            return;
+        }
+        if (highSpeed) {
+            // Constrained high-speed sessions only accept a restricted set of capture keys
+            Ln.w("Manual camera controls are not supported in high-speed capture mode; ignoring");
+            return;
+        }
+
+        CameraCharacteristics characteristics = ServiceManager.getCameraManager().getCameraCharacteristics(cameraId);
+
+        if (iso != 0) {
+            int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+            Range<Integer> isoRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
+            Range<Long> exposureRange = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            if (!contains(capabilities, CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR) || isoRange == null
+                    || exposureRange == null) {
+                Ln.w("Camera '" + cameraId + "' does not support manual sensor control; ignoring --camera-iso/--camera-exposure");
+            } else {
+                int clampedIso = isoRange.clamp(iso);
+                long exposureNs = exposureRange.clamp(exposureUs * 1000);
+                requestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
+                requestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, clampedIso);
+                requestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureNs);
+                Ln.i("Camera exposure: ISO " + clampedIso + ", " + (exposureNs / 1000) + " us");
+            }
+        }
+
+        if (!Float.isNaN(ev)) {
+            Range<Integer> evRange = characteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+            Rational evStep = characteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+            if (evRange == null || evStep == null || evStep.floatValue() == 0 || evRange.getUpper() == 0) {
+                Ln.w("Camera '" + cameraId + "' does not support exposure compensation; ignoring --camera-ev");
+            } else {
+                int index = evRange.clamp(Math.round(ev / evStep.floatValue()));
+                requestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, index);
+                Ln.i("Camera exposure compensation: " + (index * evStep.floatValue()) + " EV");
+            }
+        }
+
+        if (aeLock) {
+            if (Boolean.TRUE.equals(characteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE))) {
+                requestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+                Ln.i("Camera auto exposure locked");
+            } else {
+                Ln.w("Camera '" + cameraId + "' does not support AE lock; ignoring --camera-ae-lock");
+            }
+        }
+
+        if (awbLock) {
+            if (Boolean.TRUE.equals(characteristics.get(CameraCharacteristics.CONTROL_AWB_LOCK_AVAILABLE))) {
+                requestBuilder.set(CaptureRequest.CONTROL_AWB_LOCK, true);
+                Ln.i("Camera auto white balance locked");
+            } else {
+                Ln.w("Camera '" + cameraId + "' does not support AWB lock; ignoring --camera-awb-lock");
+            }
+        }
+
+        if (ois) {
+            int[] modes = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
+            if (contains(modes, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON)) {
+                requestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
+                Ln.i("Camera optical stabilization enabled");
+            } else {
+                Ln.w("Camera '" + cameraId + "' does not support optical stabilization; ignoring --camera-ois");
+            }
+        }
+
+        if (eis) {
+            int[] modes = characteristics.get(CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+            if (contains(modes, CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)) {
+                requestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON);
+                Ln.i("Camera video stabilization enabled");
+            } else {
+                Ln.w("Camera '" + cameraId + "' does not support video stabilization; ignoring --camera-eis");
+            }
         }
     }
 

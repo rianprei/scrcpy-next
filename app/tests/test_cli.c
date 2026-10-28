@@ -216,6 +216,27 @@ static void test_camera_focus(void) {
     };
     char *argv2[] = {"scrcpy", "--no-camera-autofocus"};
     assert(!scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
+
+    struct scrcpy_cli_args args3 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv3[] = {"scrcpy", "--video-source=camera", "--camera-iso=400",
+                     "--camera-exposure=10000", "--camera-ev=-1.5",
+                     "--camera-ae-lock", "--camera-awb-lock", "--camera-ois",
+                     "--camera-eis"};
+    assert(scrcpy_parse_args(&args3, ARRAY_LEN(argv3), argv3));
+    assert(args3.opts.camera_iso == 400);
+    assert(args3.opts.camera_exposure_us == 10000);
+    assert(!strcmp(args3.opts.camera_ev, "-1.5"));
+    assert(args3.opts.camera_ae_lock && args3.opts.camera_awb_lock);
+    assert(args3.opts.camera_ois && args3.opts.camera_eis);
+
+    // ISO without exposure time
+    struct scrcpy_cli_args args4 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv4[] = {"scrcpy", "--video-source=camera", "--camera-iso=400"};
+    assert(!scrcpy_parse_args(&args4, ARRAY_LEN(argv4), argv4));
 }
 
 static void test_show_axis(void) {

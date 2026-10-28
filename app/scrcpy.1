@@ -129,6 +129,34 @@ Select the device camera by its facing direction.
 Possible values are "front", "back" and "external".
 
 .TP
+.B \-\-camera\-ae\-lock
+Lock the auto exposure (AE) when the camera starts.
+
+.TP
+.B \-\-camera\-awb\-lock
+Lock the auto white balance (AWB) when the camera starts.
+
+.TP
+.B \-\-camera\-eis
+Enable the electronic video stabilization of the camera, if supported. It may add latency (the camera buffers frames to stabilize them).
+
+.TP
+.BI "\-\-camera\-ev " value
+Set the camera exposure compensation, in EV (for example -1, 0.5 or 2), rounded to the steps supported by the camera.
+
+.TP
+.BI "\-\-camera\-exposure " us
+Set a manual camera exposure time, in microseconds (auto exposure off). Requires \fB\-\-camera\-iso\fR.
+
+.TP
+.BI "\-\-camera\-iso " value
+Set a manual camera sensitivity (ISO, auto exposure off). Requires \fB\-\-camera\-exposure\fR.
+
+.TP
+.B \-\-camera\-ois
+Enable the optical image stabilization of the camera, if supported.
+
+.TP
 .BI "\-\-camera\-focus\-distance " value
 Set a manual camera focus distance, expressed in diopters (1/meters): 0 focuses at infinity, higher values focus closer (e.g. 5 focuses at 0.2m).
 

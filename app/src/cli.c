@@ -98,6 +98,13 @@ enum {
     OPT_CAMERA_FACING,
     OPT_CAMERA_AR,
     OPT_CAMERA_FOCUS_DISTANCE,
+    OPT_CAMERA_AE_LOCK,
+    OPT_CAMERA_AWB_LOCK,
+    OPT_CAMERA_EIS,
+    OPT_CAMERA_EV,
+    OPT_CAMERA_EXPOSURE,
+    OPT_CAMERA_ISO,
+    OPT_CAMERA_OIS,
     OPT_CAMERA_FPS,
     OPT_CAMERA_HIGH_SPEED,
     OPT_NO_CAMERA_AUTOFOCUS,
@@ -336,6 +343,44 @@ static const struct sc_option options[] = {
         .argdesc = "facing",
         .text = "Select the device camera by its facing direction.\n"
                 "Possible values are \"front\", \"back\" and \"external\".",
+    },
+    {
+        .longopt_id = OPT_CAMERA_AE_LOCK,
+        .longopt = "camera-ae-lock",
+        .text = "Lock the auto exposure (AE) when the camera starts.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_AWB_LOCK,
+        .longopt = "camera-awb-lock",
+        .text = "Lock the auto white balance (AWB) when the camera starts.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_EIS,
+        .longopt = "camera-eis",
+        .text = "Enable the electronic video stabilization of the camera, if supported.\nIt may add latency (the camera buffers frames to stabilize them).",
+    },
+    {
+        .longopt_id = OPT_CAMERA_EV,
+        .longopt = "camera-ev",
+        .argdesc = "value",
+        .text = "Set the camera exposure compensation, in EV (for example -1, 0.5 or 2), rounded to the steps supported by the camera.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_EXPOSURE,
+        .longopt = "camera-exposure",
+        .argdesc = "us",
+        .text = "Set a manual camera exposure time, in microseconds (auto exposure off).\nRequires --camera-iso.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_ISO,
+        .longopt = "camera-iso",
+        .argdesc = "value",
+        .text = "Set a manual camera sensitivity (ISO, auto exposure off).\nRequires --camera-exposure.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_OIS,
+        .longopt = "camera-ois",
+        .text = "Enable the optical image stabilization of the camera, if supported.",
     },
     {
         .longopt_id = OPT_CAMERA_FOCUS_DISTANCE,
@@ -3487,6 +3532,39 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+            case OPT_CAMERA_AE_LOCK:
+                opts->camera_ae_lock = true;
+                break;
+            case OPT_CAMERA_AWB_LOCK:
+                opts->camera_awb_lock = true;
+                break;
+            case OPT_CAMERA_EIS:
+                opts->camera_eis = true;
+                break;
+            case OPT_CAMERA_EV:
+                opts->camera_ev = optarg;
+                break;
+            case OPT_CAMERA_EXPOSURE: {
+                long value;
+                if (!parse_integer_arg(optarg, &value, false, 1, 0x7FFFFFFF,
+                                       "camera exposure")) {
+                    return false;
+                }
+                opts->camera_exposure_us = (uint32_t) value;
+                break;
+            }
+            case OPT_CAMERA_ISO: {
+                long value;
+                if (!parse_integer_arg(optarg, &value, false, 1, 0x7FFFFFFF,
+                                       "camera iso")) {
+                    return false;
+                }
+                opts->camera_iso = (uint32_t) value;
+                break;
+            }
+            case OPT_CAMERA_OIS:
+                opts->camera_ois = true;
+                break;
             case OPT_CAMERA_FOCUS_DISTANCE:
                 opts->camera_focus_distance = optarg;
                 break;
@@ -3966,6 +4044,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             return false;
         }
 
+        if (!opts->camera_iso != !opts->camera_exposure_us) {
+            LOGE("--camera-iso and --camera-exposure must be set together");
+            return false;
+        }
+
         if (opts->control) {
             // Disable all inputs for camera
             opts->keyboard_input_mode = SC_KEYBOARD_INPUT_MODE_DISABLED;
@@ -3979,6 +4062,13 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             || opts->camera_high_speed
             || opts->camera_no_autofocus
             || opts->camera_focus_distance
+            || opts->camera_iso
+            || opts->camera_exposure_us
+            || opts->camera_ev
+            || opts->camera_ae_lock
+            || opts->camera_awb_lock
+            || opts->camera_ois
+            || opts->camera_eis
             || opts->camera_size) {
         LOGE("Camera options are only available with --video-source=camera");
         return false;

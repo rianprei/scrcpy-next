@@ -19,6 +19,13 @@ _scrcpy() {
         --camera-ar=
         --camera-id=
         --camera-facing=
+        --camera-ae-lock
+        --camera-awb-lock
+        --camera-eis
+        --camera-ev=
+        --camera-exposure=
+        --camera-iso=
+        --camera-ois
         --camera-focus-distance=
         --camera-fps=
         --camera-high-speed
@@ -257,6 +264,9 @@ _scrcpy() {
         |--background-color \
         |--camera-ar \
         |--camera-id \
+        |--camera-ev \
+        |--camera-exposure \
+        |--camera-iso \
         |--camera-focus-distance \
         |--camera-fps \
         |--camera-size \

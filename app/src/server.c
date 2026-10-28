@@ -373,6 +373,28 @@ execute_server(struct sc_server *server,
         VALIDATE_STRING(params->camera_focus_distance);
         ADD_PARAM("camera_focus_distance=%s", params->camera_focus_distance);
     }
+    if (params->camera_iso) {
+        ADD_PARAM("camera_iso=%" PRIu32, params->camera_iso);
+    }
+    if (params->camera_exposure_us) {
+        ADD_PARAM("camera_exposure_us=%" PRIu32, params->camera_exposure_us);
+    }
+    if (params->camera_ev) {
+        VALIDATE_STRING(params->camera_ev);
+        ADD_PARAM("camera_ev=%s", params->camera_ev);
+    }
+    if (params->camera_ae_lock) {
+        ADD_PARAM("camera_ae_lock=true");
+    }
+    if (params->camera_awb_lock) {
+        ADD_PARAM("camera_awb_lock=true");
+    }
+    if (params->camera_ois) {
+        ADD_PARAM("camera_ois=true");
+    }
+    if (params->camera_eis) {
+        ADD_PARAM("camera_eis=true");
+    }
     if (params->camera_fps) {
         ADD_PARAM("camera_fps=%" PRIu16, params->camera_fps);
     }

@@ -54,6 +54,13 @@ public class Options {
     private boolean cameraTorch;
     private boolean cameraNoAutofocus;
     private float cameraFocusDistance = Float.NaN;
+    private int cameraIso; // 0 for auto
+    private long cameraExposureUs; // 0 for auto
+    private float cameraEv = Float.NaN;
+    private boolean cameraAeLock;
+    private boolean cameraAwbLock;
+    private boolean cameraOis;
+    private boolean cameraEis;
     private boolean showTouches;
     private boolean stayAwake;
     private int screenOffTimeout = -1;
@@ -221,6 +228,34 @@ public class Options {
 
     public float getCameraFocusDistance() {
         return cameraFocusDistance;
+    }
+
+    public int getCameraIso() {
+        return cameraIso;
+    }
+
+    public long getCameraExposureUs() {
+        return cameraExposureUs;
+    }
+
+    public float getCameraEv() {
+        return cameraEv;
+    }
+
+    public boolean getCameraAeLock() {
+        return cameraAeLock;
+    }
+
+    public boolean getCameraAwbLock() {
+        return cameraAwbLock;
+    }
+
+    public boolean getCameraOis() {
+        return cameraOis;
+    }
+
+    public boolean getCameraEis() {
+        return cameraEis;
     }
 
     public boolean getShowTouches() {
@@ -574,6 +609,27 @@ public class Options {
                     break;
                 case "camera_focus_distance":
                     options.cameraFocusDistance = parseFloat("camera_focus_distance", value);
+                    break;
+                case "camera_iso":
+                    options.cameraIso = Integer.parseInt(value);
+                    break;
+                case "camera_exposure_us":
+                    options.cameraExposureUs = Long.parseLong(value);
+                    break;
+                case "camera_ev":
+                    options.cameraEv = parseFloat("camera_ev", value);
+                    break;
+                case "camera_ae_lock":
+                    options.cameraAeLock = Boolean.parseBoolean(value);
+                    break;
+                case "camera_awb_lock":
+                    options.cameraAwbLock = Boolean.parseBoolean(value);
+                    break;
+                case "camera_ois":
+                    options.cameraOis = Boolean.parseBoolean(value);
+                    break;
+                case "camera_eis":
+                    options.cameraEis = Boolean.parseBoolean(value);
                     break;
                 case "camera_fps":
                     options.cameraFps = Integer.parseInt(value);
