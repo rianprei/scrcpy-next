@@ -193,6 +193,10 @@ enum sc_keycode {
     SC_KEYCODE_RSHIFT = SDLK_RSHIFT,
     SC_KEYCODE_RALT = SDLK_RALT,
     SC_KEYCODE_RGUI = SDLK_RGUI,
+
+    // Korean keyboards: Hangul/English and Hanja keys
+    SC_KEYCODE_LANG1 = SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_LANG1),
+    SC_KEYCODE_LANG2 = SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_LANG2),
 };
 
 enum sc_scancode {
