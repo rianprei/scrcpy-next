@@ -39,6 +39,12 @@ struct sc_stream_sink {
 
     char *url;
 
+    // Optional, called from the stream sink thread when a new client
+    // connects (a joining client needs a key frame to start decoding).
+    // Must be set before sc_stream_sink_start().
+    void (*on_new_client)(void *userdata);
+    void *on_new_client_userdata;
+
     // Template format context (no pb): holds stream definitions and codec
     // parameters used to initialise a fresh context for each new connection.
     AVFormatContext *ctx;

@@ -1,6 +1,9 @@
 package com.genymobile.scrcpy.video;
 
+import com.genymobile.scrcpy.util.Ln;
+
 import android.media.MediaCodec;
+import android.os.Bundle;
 
 public class CaptureControl {
 
@@ -32,6 +35,22 @@ public class CaptureControl {
                 runningMediaCodec.signalEndOfInputStream();
             } catch (IllegalStateException e) {
                 // ignore
+            }
+        }
+    }
+
+    /**
+     * Ask the running encoder for a key frame as soon as possible, without restarting the capture (e.g. for a client joining a stream).
+     */
+    public synchronized void requestSyncFrame() {
+        if (runningMediaCodec != null) {
+            Bundle params = new Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+            try {
+                runningMediaCodec.setParameters(params);
+                Ln.d("Key frame requested");
+            } catch (IllegalStateException e) {
+                // the codec is being reset, the next stream starts with a key frame anyway
             }
         }
     }

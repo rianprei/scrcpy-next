@@ -337,6 +337,9 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             case ControlMessage.TYPE_RESET_VIDEO:
                 resetVideo();
                 return true;
+            case ControlMessage.TYPE_REQUEST_KEY_FRAME:
+                requestKeyFrame();
+                return true;
             default:
                 // fall through
         }
@@ -873,6 +876,12 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         if (surfaceCapture != null) {
             Ln.i("Video capture reset");
             surfaceCapture.getCaptureControl().reset(CaptureControl.RESET_REASON_CLIENT_RESET);
+        }
+    }
+
+    private void requestKeyFrame() {
+        if (surfaceCapture != null) {
+            surfaceCapture.getCaptureControl().requestSyncFrame();
         }
     }
 

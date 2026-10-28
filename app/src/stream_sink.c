@@ -789,6 +789,9 @@ run_stream_sink(void *data) {
         }
 
         LOGI("Stream sink: client connected on %s", sink->url);
+        if (sink->on_new_client) {
+            sink->on_new_client(sink->on_new_client_userdata);
+        }
 
         if (is_connectionless) {
             // For connectionless protocols (UDP, RTP), we only need a single

@@ -73,6 +73,9 @@ struct scrcpy {
     struct sc_video_regulator v4l2_regulator;
 #endif
     struct sc_controller controller;
+    // Set while the controller accepts messages (read from the stream sink
+    // thread)
+    atomic_bool controller_running;
     struct sc_file_pusher file_pusher;
 #ifdef HAVE_CLIENT_AUDIO
     struct sc_client_audio client_audio;
@@ -382,6 +385,22 @@ sc_init_video_hwdec(struct sc_hwdec *hwdec, enum sc_hwdec_mode mode,
     return sc_hwdec_init(hwdec, AV_HWDEVICE_TYPE_NONE, NULL, false, NULL);
 }
 
+static void
+sc_stream_sink_on_new_client(void *userdata) {
+    struct scrcpy *s = userdata;
+
+    // A client joining the stream cannot decode anything before the next key
+    // frame: request one instead of waiting for the periodic one
+    if (atomic_load(&s->controller_running)) {
+        struct sc_control_msg msg = {
+            .type = SC_CONTROL_MSG_TYPE_REQUEST_KEY_FRAME,
+        };
+        if (!sc_controller_push_msg(&s->controller, &msg)) {
+            LOGW("Could not request a key frame for the new stream client");
+        }
+    }
+}
+
 enum scrcpy_exit_code
 scrcpy(struct scrcpy_options *options) {
     static struct scrcpy scrcpy;
@@ -668,12 +687,16 @@ scrcpy(struct scrcpy_options *options) {
         }
     }
 
+    atomic_init(&s->controller_running, false);
+
     if (options->stream_sink) {
         if (!sc_stream_sink_init(&s->stream_sink, options->stream_sink,
                                  options->video, options->audio)) {
             goto end;
         }
         stream_sink_initialized = true;
+        s->stream_sink.on_new_client = sc_stream_sink_on_new_client;
+        s->stream_sink.on_new_client_userdata = s;
 
         if (!sc_stream_sink_start(&s->stream_sink)) {
             goto end;
@@ -851,6 +874,7 @@ aoa_complete:
             goto end;
         }
         controller_started = true;
+        atomic_store(&s->controller_running, true);
     }
 
     // There is a controller if and only if control is enabled
@@ -1124,6 +1148,7 @@ end:
     }
 #endif
     if (controller_started) {
+        atomic_store(&s->controller_running, false);
         sc_controller_stop(&s->controller);
     }
     if (file_pusher_initialized) {
@@ -1268,6 +1293,13 @@ end:
         sc_latency_stats_stop();
         sc_latency_stats_join();
         sc_latency_stats_destroy();
+    }
+
+    // The stream sink thread may push messages to the controller: join it
+    // before destroying the controller
+    if (stream_sink_started) {
+        sc_stream_sink_join(&s->stream_sink);
+        stream_sink_started = false;
     }
 
     if (controller_started) {
