@@ -139,6 +139,7 @@ arguments=(
     '--vsync[Enable vertical synchronization for the display renderer]'
     {-w,--stay-awake}'[Keep the device on while scrcpy is running, when the device is plugged in]'
     '--window-borderless[Disable window decorations \(display borderless window\)]'
+    '--window-parent=[Embed the window into the given parent HWND \(Windows\)]'
     '--window-title=[Set a custom window title]'
     '--window-x=[Set the initial window horizontal position]'
     '--window-y=[Set the initial window vertical position]'

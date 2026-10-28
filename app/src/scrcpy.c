@@ -999,6 +999,7 @@ aoa_complete:
             .background_color = options->background_color,
             .window_aspect_ratio_lock = options->window_aspect_ratio_lock,
             .window_borderless = options->window_borderless,
+            .window_parent = options->window_parent,
             .render_fit = options->render_fit,
             .orientation = options->display_orientation,
             .mipmaps = options->mipmaps,

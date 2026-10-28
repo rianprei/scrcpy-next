@@ -39,6 +39,7 @@ struct sc_screen {
     bool camera;
     bool window_aspect_ratio_lock;
     bool flex_display;
+    bool embedded; // --window-parent
     sc_tick disconnect_timeout;
     bool reconnect;
     // false once the window has been released to the caller
@@ -172,6 +173,7 @@ struct sc_screen_params {
 
     bool window_aspect_ratio_lock;
     bool window_borderless;
+    uint64_t window_parent; // HWND (Windows), 0 if none
 
     enum sc_render_fit render_fit;
     enum sc_orientation orientation;

@@ -135,6 +135,7 @@ _scrcpy() {
         --vsync
         -w --stay-awake
         --window-borderless
+        --window-parent=
         --window-title=
         --window-x=
         --window-y=

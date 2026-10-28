@@ -368,6 +368,7 @@ struct scrcpy_options {
     enum sc_key_inject_mode key_inject_mode;
     bool window_aspect_ratio_lock;
     bool window_borderless;
+    uint64_t window_parent; // HWND (Windows), 0 if none
     bool mipmaps;
     bool vsync;
     bool stay_awake;

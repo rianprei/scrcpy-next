@@ -12,6 +12,7 @@
 #include "util/log.h"
 #ifdef _WIN32
 # include "sys/win/darkmode.h"
+# include "sys/win/embed.h"
 #endif
 #include "util/sdl.h"
 
@@ -730,6 +731,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->window_aspect_ratio_lock = params->window_aspect_ratio_lock;
     screen->render_fit = params->render_fit;
     screen->flex_display = params->flex_display;
+    screen->embedded = false;
     screen->reconnect = params->reconnect;
     screen->owns_window = true;
     screen->awaiting_first_frame = false;
@@ -824,6 +826,12 @@ sc_screen_init(struct sc_screen *screen,
         }
 #ifdef _WIN32
         sc_darkmode_apply_to_window(screen->window);
+        if (params->window_parent) {
+            if (!sc_win_embed_window(screen->window, params->window_parent)) {
+                goto error_destroy_window;
+            }
+            screen->embedded = true;
+        }
 #endif
     }
 
@@ -1359,6 +1367,11 @@ sc_screen_set_paused(struct sc_screen *screen, bool paused) {
 void
 sc_screen_toggle_fullscreen(struct sc_screen *screen) {
     assert(screen->video);
+
+    if (screen->embedded) {
+        LOGW("Fullscreen is disabled for an embedded window");
+        return;
+    }
 
     bool req_fullscreen =
         !(SDL_GetWindowFlags(screen->window) & SDL_WINDOW_FULLSCREEN);

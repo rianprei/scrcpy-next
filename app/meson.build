@@ -96,6 +96,7 @@ if host_machine.system() == 'windows'
         'src/sys/win/file.c',
         'src/sys/win/process.c',
         'src/sys/win/darkmode.c',
+        'src/sys/win/embed.c',
         windows.compile_resources('scrcpy-windows.rc'),
     ]
     feature_test_macros += [

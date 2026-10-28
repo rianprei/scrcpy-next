@@ -34,6 +34,7 @@ enum {
     OPT_WINDOW_WIDTH,
     OPT_WINDOW_HEIGHT,
     OPT_WINDOW_BORDERLESS,
+    OPT_WINDOW_PARENT,
     OPT_MAX_FPS,
     OPT_DISPLAY_ID,
     OPT_RENDER_DRIVER,
@@ -1306,6 +1307,15 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_WINDOW_BORDERLESS,
         .longopt = "window-borderless",
         .text = "Disable window decorations (display borderless window)."
+    },
+    {
+        .longopt_id = OPT_WINDOW_PARENT,
+        .longopt = "window-parent",
+        .argdesc = "hwnd",
+        .text = "Embed the scrcpy window into the given parent window handle "
+                "(HWND, in decimal or hexadecimal), for example to show it "
+                "inside another application. Fullscreen is disabled.\n"
+                "Windows only.",
     },
     {
         .longopt_id = OPT_WINDOW_TITLE,
@@ -2654,6 +2664,25 @@ parse_time_limit(const char *s, sc_tick *tick) {
 }
 
 static bool
+parse_window_parent(const char *s, uint64_t *parent) {
+#ifdef _WIN32
+    char *end;
+    unsigned long long value = strtoull(s, &end, 0);
+    if (!*s || *end || !value) {
+        LOGE("Invalid window parent handle: %s", s);
+        return false;
+    }
+    *parent = value;
+    return true;
+#else
+    (void) s;
+    (void) parent;
+    LOGE("--window-parent is only supported on Windows");
+    return false;
+#endif
+}
+
+static bool
 parse_shortcut_remap(const char *s, struct sc_shortcut_remaps *remaps) {
     const char *eq = strchr(s, '=');
     if (!eq || eq == s || !eq[1]) {
@@ -3157,6 +3186,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_WINDOW_BORDERLESS:
                 opts->window_borderless = true;
+                break;
+            case OPT_WINDOW_PARENT:
+                if (!parse_window_parent(optarg, &opts->window_parent)) {
+                    return false;
+                }
                 break;
             case OPT_PUSH_TARGET:
                 opts->push_target = optarg;
