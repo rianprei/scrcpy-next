@@ -22,6 +22,11 @@ struct sc_texture {
     bool mipmaps;
 
     struct sc_interop *interop;
+
+    // Conversion of software frames in a format the interop does not support
+    // (e.g. yuv422p10le from APV), lazily initialized
+    struct SwsContext *sws;
+    AVFrame *converted;
 };
 
 bool

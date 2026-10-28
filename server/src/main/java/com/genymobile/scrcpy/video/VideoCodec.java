@@ -12,6 +12,8 @@ public enum VideoCodec implements Codec {
     AV1(0x00_61_76_31, "av1", MediaFormat.MIMETYPE_VIDEO_AV1),
     VP8(0x00_76_70_38, "vp8", MediaFormat.MIMETYPE_VIDEO_VP8),
     VP9(0x00_76_70_39, "vp9", MediaFormat.MIMETYPE_VIDEO_VP9),
+    @SuppressLint("InlinedApi") // introduced in API 36
+    APV(0x00_61_70_76, "apv", MediaFormat.MIMETYPE_VIDEO_APV),
     // Software fallback which does not use MediaCodec at all: raw screen captures are individually JPEG-compressed
     // and sent as a Motion JPEG stream. Useful on devices where MediaCodec is broken or unavailable.
     MJPEG(0x6d_6a_70_67, "mjpeg", "video/mjpeg");

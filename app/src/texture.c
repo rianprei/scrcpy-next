@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <libavutil/pixdesc.h>
+#include <libswscale/swscale.h>
 
 #include "util/log.h"
 
@@ -46,6 +47,8 @@ sc_texture_init(struct sc_texture *tex, SDL_Renderer *renderer, bool mipmaps,
     }
 
     tex->renderer = renderer;
+    tex->sws = NULL;
+    tex->converted = NULL;
     tex->interop = sc_interop_new(hwdec_mode, tex->renderer, gl, tex->mipmaps);
     if (!tex->interop) {
         return false;
@@ -59,6 +62,8 @@ sc_texture_init(struct sc_texture *tex, SDL_Renderer *renderer, bool mipmaps,
 void
 sc_texture_destroy(struct sc_texture *tex) {
     sc_interop_delete(tex->interop);
+    sws_freeContext(tex->sws);
+    av_frame_free(&tex->converted);
 }
 
 SDL_Texture *
@@ -104,6 +109,52 @@ sc_texture_disable_hwdec(struct sc_texture *tex) {
     return true;
 }
 
+static const AVFrame *
+sc_texture_convert(struct sc_texture *tex, const AVFrame *frame,
+                   enum AVPixelFormat dst_format) {
+    if (!tex->sws) {
+        const char *name = av_get_pix_fmt_name(frame->format);
+        LOGI("Converting %s frames to %s", name ? name : "(unknown)",
+             av_get_pix_fmt_name(dst_format));
+    }
+
+    tex->sws = sws_getCachedContext(tex->sws, frame->width, frame->height,
+                                    frame->format, frame->width, frame->height,
+                                    dst_format, SWS_BILINEAR, NULL, NULL, NULL);
+    if (!tex->sws) {
+        LOGE("Could not initialize the frame conversion");
+        return NULL;
+    }
+
+    AVFrame *dst = tex->converted;
+    if (!dst || dst->width != frame->width || dst->height != frame->height) {
+        av_frame_free(&tex->converted);
+        dst = av_frame_alloc();
+        if (!dst) {
+            LOG_OOM();
+            return NULL;
+        }
+        dst->format = dst_format;
+        dst->width = frame->width;
+        dst->height = frame->height;
+        if (av_frame_get_buffer(dst, 0) < 0) {
+            av_frame_free(&dst);
+            LOG_OOM();
+            return NULL;
+        }
+        tex->converted = dst;
+    }
+
+    sws_scale(tex->sws, (const uint8_t *const *) frame->data, frame->linesize,
+              0, frame->height, dst->data, dst->linesize);
+
+    if (av_frame_copy_props(dst, frame) < 0) {
+        LOG_OOM();
+        return NULL;
+    }
+    return dst;
+}
+
 bool
 sc_texture_update(struct sc_texture *tex, const AVFrame *frame) {
     assert(tex->interop);
@@ -126,9 +177,15 @@ sc_texture_update(struct sc_texture *tex, const AVFrame *frame) {
     struct sc_interop *interop = tex->interop;
 
     if (interop->pix_fmt != format) {
-        const char *name = av_get_pix_fmt_name(format);
-        LOGE("Unsupported frames format: %s", name ? name : "(unknown)");
-        return false;
+        if (frame->hw_frames_ctx) {
+            const char *name = av_get_pix_fmt_name(format);
+            LOGE("Unsupported frames format: %s", name ? name : "(unknown)");
+            return false;
+        }
+        frame = sc_texture_convert(tex, frame, interop->pix_fmt);
+        if (!frame) {
+            return false;
+        }
     }
 
     assert(interop->ops && interop->ops->import);

@@ -108,6 +108,7 @@ _scrcpy() {
         --shortcut-mod=
         --start-app=
         --stream-sink=
+        --show-axis
         -t --show-touches
         --tcpip
         --tcpip=
@@ -142,7 +143,7 @@ _scrcpy() {
 
     case "$prev" in
         --video-codec)
-            COMPREPLY=($(compgen -W 'h264 h265 av1 vp8 vp9 mjpeg' -- "$cur"))
+            COMPREPLY=($(compgen -W 'h264 h265 av1 vp8 vp9 apv mjpeg' -- "$cur"))
             return
             ;;
         --audio-codec)

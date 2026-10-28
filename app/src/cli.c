@@ -1214,7 +1214,10 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_VIDEO_CODEC,
         .longopt = "video-codec",
         .argdesc = "name",
-        .text = "Select a video codec (h264, h265, av1, vp8, vp9 or mjpeg).\n"
+        .text = "Select a video codec (h264, h265, av1, vp8, vp9, apv or "
+                "mjpeg).\n"
+                "The apv codec requires an APV encoder on the device (Android "
+                "16+) and FFmpeg 8+ on the computer.\n"
                 "Default is h264.\n"
                 "The mjpeg codec does not use MediaCodec at all: it captures "
                 "raw frames and compresses them to JPEG on the CPU. Use it as "
@@ -2352,11 +2355,15 @@ parse_video_codec(const char *optarg, enum sc_codec *codec) {
         *codec = SC_CODEC_VP9;
         return true;
     }
+    if (!strcmp(optarg, "apv")) {
+        *codec = SC_CODEC_APV;
+        return true;
+    }
     if (!strcmp(optarg, "mjpeg")) {
         *codec = SC_CODEC_MJPEG;
         return true;
     }
-    LOGE("Unsupported video codec: %s (expected h264, h265, av1, vp8, vp9 or mjpeg)", optarg);
+    LOGE("Unsupported video codec: %s (expected h264, h265, av1, vp8, vp9, apv or mjpeg)", optarg);
     return false;
 }
 

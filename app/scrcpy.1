@@ -702,6 +702,10 @@ Both prefixes can be used, in that order:
     scrcpy --start-app=+?firefox
 
 .TP
+.B \-\-show\-axis
+Show numbered device pixel coordinates along the top and left edges of the mirrored screen (for example, to find the coordinates for "adb shell input tap X Y").
+
+.TP
 .B \-t, \-\-show\-touches
 Enable "show touches" on start, restore the initial value on exit.
 
@@ -789,7 +793,9 @@ Default is 0 (no buffering).
 
 .TP
 .BI "\-\-video\-codec " name
-Select a video codec (h264, h265, av1, vp8, vp9 or mjpeg).
+Select a video codec (h264, h265, av1, vp8, vp9, apv or mjpeg).
+
+The apv codec (Advanced Professional Video) requires an APV encoder on the device (Android 16+) and FFmpeg 8+ on the computer.
 
 The mjpeg codec does not use MediaCodec at all: it captures raw frames and compresses them to JPEG on the CPU. Use it as a fallback on devices where MediaCodec is broken (recording and \fB\-\-stream\-sink\fR are not supported with it).
 
