@@ -27,6 +27,8 @@ struct sc_texture {
     // (e.g. yuv422p10le from APV), lazily initialized
     struct SwsContext *sws;
     AVFrame *converted;
+    // Hardware frames downloaded to memory, once the hardware interop failed
+    AVFrame *downloaded;
 };
 
 bool

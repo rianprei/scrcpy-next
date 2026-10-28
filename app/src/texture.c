@@ -49,6 +49,7 @@ sc_texture_init(struct sc_texture *tex, SDL_Renderer *renderer, bool mipmaps,
     tex->renderer = renderer;
     tex->sws = NULL;
     tex->converted = NULL;
+    tex->downloaded = NULL;
     tex->interop = sc_interop_new(hwdec_mode, tex->renderer, gl, tex->mipmaps);
     if (!tex->interop) {
         return false;
@@ -64,6 +65,7 @@ sc_texture_destroy(struct sc_texture *tex) {
     sc_interop_delete(tex->interop);
     sws_freeContext(tex->sws);
     av_frame_free(&tex->converted);
+    av_frame_free(&tex->downloaded);
 }
 
 SDL_Texture *
@@ -155,9 +157,38 @@ sc_texture_convert(struct sc_texture *tex, const AVFrame *frame,
     return dst;
 }
 
+static const AVFrame *
+sc_texture_download(struct sc_texture *tex, const AVFrame *frame) {
+    if (!tex->downloaded) {
+        tex->downloaded = av_frame_alloc();
+        if (!tex->downloaded) {
+            LOG_OOM();
+            return NULL;
+        }
+    }
+
+    AVFrame *dst = tex->downloaded;
+    av_frame_unref(dst);
+    if (av_hwframe_transfer_data(dst, frame, 0) < 0
+            || av_frame_copy_props(dst, frame) < 0) {
+        LOGE("Could not download the hardware frame");
+        return NULL;
+    }
+    return dst;
+}
+
 bool
 sc_texture_update(struct sc_texture *tex, const AVFrame *frame) {
     assert(tex->interop);
+
+    if (frame->hw_frames_ctx
+            && tex->interop->hw_type == AV_HWDEVICE_TYPE_NONE) {
+        // The hardware interop failed (see below): render from memory
+        frame = sc_texture_download(tex, frame);
+        if (!frame) {
+            return false;
+        }
+    }
 
     enum AVPixelFormat format = frame->format;
     if (format == AV_PIX_FMT_YUVJ420P) {
@@ -189,7 +220,18 @@ sc_texture_update(struct sc_texture *tex, const AVFrame *frame) {
     }
 
     assert(interop->ops && interop->ops->import);
-    return interop->ops->import(interop, frame);
+    bool ok = interop->ops->import(interop, frame);
+    if (!ok && frame->hw_frames_ctx) {
+        // For example, the DMA-BUF cannot be imported as an EGLImage (no
+        // DRI on the X server): keep the hardware decoder, but download the
+        // frames instead of showing nothing
+        LOGW("Could not import the hardware frame, rendering from memory");
+        if (!sc_texture_disable_hwdec(tex)) {
+            return false;
+        }
+        return sc_texture_update(tex, frame);
+    }
+    return ok;
 }
 
 void
