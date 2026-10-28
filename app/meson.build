@@ -324,6 +324,10 @@ if get_option('buildtype') == 'debug'
             'tests/test_device_msg_deserialize.c',
             'src/device_msg.c',
         ]],
+        ['test_screenshot', [
+            'tests/test_screenshot.c',
+            'src/screenshot.c',
+        ]],
         ['test_gamepad_axis_queue', [
             'tests/test_gamepad_axis_queue.c',
             'src/hid/gamepad_axis_queue.c',

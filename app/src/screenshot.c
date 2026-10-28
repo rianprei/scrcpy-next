@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/hwcontext.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/pixfmt.h>
 #include <libswscale/swscale.h>
@@ -15,9 +17,16 @@
 
 static bool
 generate_filename(char *buf, size_t size) {
+    // $HOME/Downloads if it exists, the current directory otherwise
+    char dir[512] = ".";
     const char *home = getenv("HOME");
-    if (!home) {
-        home = ".";
+    if (home) {
+        struct stat st;
+        int r = snprintf(dir, sizeof(dir), "%s/Downloads", home);
+        if (r <= 0 || (size_t) r >= sizeof(dir) || stat(dir, &st)
+                || !S_ISDIR(st.st_mode)) {
+            strcpy(dir, ".");
+        }
     }
 
     time_t now = time(NULL);
@@ -25,12 +34,26 @@ generate_filename(char *buf, size_t size) {
     if (!tm) {
         return false;
     }
-    int ret = snprintf(buf, size,
-                       "%s/Downloads/scrcpy_%04d%02d%02d-%02d%02d%02d.png",
-                       home,
-                       tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-                       tm->tm_hour, tm->tm_min, tm->tm_sec);
-    return ret > 0 && (size_t) ret < size;
+    // Several screenshots in the same second must not overwrite each other
+    for (unsigned i = 0; i < 1000; ++i) {
+        char suffix[8] = "";
+        if (i) {
+            snprintf(suffix, sizeof(suffix), "-%u", i);
+        }
+        int ret = snprintf(buf, size,
+                           "%s/scrcpy_%04d%02d%02d-%02d%02d%02d%s.png",
+                           dir,
+                           tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+                           tm->tm_hour, tm->tm_min, tm->tm_sec, suffix);
+        if (ret <= 0 || (size_t) ret >= size) {
+            return false;
+        }
+        struct stat st;
+        if (stat(buf, &st)) {
+            return true; // does not exist yet
+        }
+    }
+    return false;
 }
 
 static AVFrame *
@@ -222,18 +245,36 @@ end:
 
 bool
 sc_screenshot_save(const AVFrame *frame, enum sc_orientation orientation) {
-    if (!frame || !frame->data[0]) {
+    // A hardware-decoded frame (e.g. VA-API) has no data[0]: its content is in
+    // a GPU surface
+    if (!frame || (!frame->data[0] && !frame->hw_frames_ctx)) {
         LOGW("No frame available for screenshot");
         return false;
     }
 
-    char filename[64];
+    char filename[600];
     if (!generate_filename(filename, sizeof(filename))) {
         LOGE("Could not generate screenshot filename");
         return false;
     }
 
+    AVFrame *sw_frame = NULL;
+    if (frame->hw_frames_ctx) {
+        sw_frame = av_frame_alloc();
+        if (!sw_frame) {
+            LOG_OOM();
+            return false;
+        }
+        if (av_hwframe_transfer_data(sw_frame, frame, 0) < 0) {
+            LOGE("Could not download the hardware frame for screenshot");
+            av_frame_free(&sw_frame);
+            return false;
+        }
+        frame = sw_frame;
+    }
+
     AVFrame *rgb_frame = convert_to_rgb(frame);
+    av_frame_free(&sw_frame);
     if (!rgb_frame) {
         return false;
     }
