@@ -38,6 +38,7 @@ struct sc_screen {
     bool video;
     bool camera;
     bool window_aspect_ratio_lock;
+    bool window_auto_resize;
     bool flex_display;
     bool embedded; // --window-parent
     bool kmsdrm; // the KMSDRM video driver only works fullscreen
@@ -173,6 +174,7 @@ struct sc_screen_params {
     uint32_t background_color;
 
     bool window_aspect_ratio_lock;
+    bool window_auto_resize;
     bool window_borderless;
     uint64_t window_parent; // HWND (Windows), 0 if none
 

@@ -367,6 +367,7 @@ struct scrcpy_options {
     bool turn_screen_off;
     enum sc_key_inject_mode key_inject_mode;
     bool window_aspect_ratio_lock;
+    bool window_auto_resize;
     bool window_borderless;
     uint64_t window_parent; // HWND (Windows), 0 if none
     bool mipmaps;

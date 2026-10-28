@@ -125,6 +125,7 @@ enum {
     OPT_CAMERA_ZOOM,
     OPT_MIN_SIZE_ALIGNMENT,
     OPT_NO_WINDOW_ASPECT_RATIO_LOCK,
+    OPT_NO_WINDOW_AUTO_RESIZE,
     OPT_KEEP_ACTIVE,
     OPT_BACKGROUND_COLOR,
     OPT_RENDER_FIT,
@@ -876,6 +877,13 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_NO_WINDOW_ASPECT_RATIO_LOCK,
         .longopt = "no-window-aspect-ratio-lock",
         .text = "Disable window aspect ratio lock.",
+    },
+    {
+        .longopt_id = OPT_NO_WINDOW_AUTO_RESIZE,
+        .longopt = "no-window-auto-resize",
+        .text = "Do not resize the window when the device content size "
+                "changes (for example on rotation): leave the window size to "
+                "the window manager (useful with tiling window managers).",
     },
     {
         .longopt_id = OPT_ORIENTATION,
@@ -3535,6 +3543,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                                               &opts->min_size_alignment)) {
                     return false;
                 }
+                break;
+            case OPT_NO_WINDOW_AUTO_RESIZE:
+                opts->window_auto_resize = false;
                 break;
             case OPT_NO_WINDOW_ASPECT_RATIO_LOCK:
                 opts->window_aspect_ratio_lock = false;

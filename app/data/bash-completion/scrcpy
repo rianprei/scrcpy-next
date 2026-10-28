@@ -85,6 +85,7 @@ _scrcpy() {
         --no-video-playback
         --no-window
         --no-window-aspect-ratio-lock
+        --no-window-auto-resize
         --orientation=
         --otg
         --otg-automatic-screenshot

@@ -91,6 +91,7 @@ arguments=(
     '--no-video-playback[Disable video playback]'
     '--no-window[Disable scrcpy window]'
     '--no-window-aspect-ratio-lock[Disable window aspect ratio lock]'
+    '--no-window-auto-resize[Leave the window size to the window manager]'
     '--orientation=[Set the video orientation]:orientation values:(0 90 180 270 flip0 flip90 flip180 flip270)'
     '--otg[Run in OTG mode \(simulating physical keyboard and mouse\)]'
     '--otg-automatic-screenshot[Take a device screenshot each time the mouse capture is released in OTG mode]'

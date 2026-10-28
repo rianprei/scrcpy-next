@@ -729,6 +729,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->camera = params->camera;
     screen->disconnect_timeout = params->disconnect_timeout;
     screen->window_aspect_ratio_lock = params->window_aspect_ratio_lock;
+    screen->window_auto_resize = params->window_auto_resize;
     screen->render_fit = params->render_fit;
     screen->flex_display = params->flex_display;
     screen->embedded = false;
@@ -1181,6 +1182,11 @@ static void
 resize_for_content(struct sc_screen *screen, struct sc_size old_content_size,
                    struct sc_size new_content_size) {
     assert(screen->video);
+
+    if (!screen->window_auto_resize) {
+        // The window manager decides the window size
+        return;
+    }
 
     struct sc_size target_size = new_content_size;
     if (!screen->flex_display) {
