@@ -75,7 +75,8 @@ public class SurfaceEncoder implements AsyncProcessor {
     private void streamCapture() throws IOException, ConfigurationException {
         Codec codec = streamer.getCodec();
         MediaCodec mediaCodec = createMediaCodec(codec, encoderName);
-        MediaFormat format = createFormat(codec.getMimeType(), videoBitRate, maxFps, codecOptions);
+        int bitRate = ignoreVideoEncoderConstraints ? videoBitRate : clampBitRate(mediaCodec, codec.getMimeType(), videoBitRate);
+        MediaFormat format = createFormat(codec.getMimeType(), bitRate, maxFps, codecOptions);
 
         MediaCodecInfo.VideoCapabilities caps;
         int alignment;
@@ -310,6 +311,25 @@ public class SurfaceEncoder implements AsyncProcessor {
             Ln.e("Could not create default video encoder for " + codec.getName() + "\n" + LogUtils.buildVideoEncoderListMessage());
             throw e;
         }
+    }
+
+    /**
+     * Clamp the bit rate to the range supported by the encoder (configure() fails for example with --video-bit-rate=2147483647).
+     */
+    private static int clampBitRate(MediaCodec mediaCodec, String mimeType, int bitRate) {
+        try {
+            MediaCodecInfo.VideoCapabilities caps = mediaCodec.getCodecInfo().getCapabilitiesForType(mimeType).getVideoCapabilities();
+            if (caps != null) {
+                int clamped = caps.getBitrateRange().clamp(bitRate);
+                if (clamped != bitRate) {
+                    Ln.w("Video bit rate " + bitRate + " unsupported by the encoder, using " + clamped);
+                }
+                return clamped;
+            }
+        } catch (IllegalArgumentException e) {
+            // The encoder does not support the mime type, configure() will report it
+        }
+        return bitRate;
     }
 
     private static MediaFormat createFormat(String videoMimeType, int bitRate, float maxFps, List<CodecOption> codecOptions) {
