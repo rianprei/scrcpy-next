@@ -10,6 +10,7 @@ _scrcpy() {
         --audio-dup
         --audio-encoder=
         --audio-source=
+        --autofocus-window
         --audio-output-buffer=
         --audio-output-device=
         -b --video-bit-rate=

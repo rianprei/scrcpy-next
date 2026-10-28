@@ -17,6 +17,7 @@ arguments=(
     '--audio-dup=[Duplicate audio]'
     '--audio-encoder=[Use a specific MediaCodec audio encoder]'
     '--audio-source=[Select the audio source]:source:(output playback mic mic-unprocessed mic-camcorder mic-voice-recognition mic-voice-communication voice-call voice-call-uplink voice-call-downlink voice-performance)'
+    '--autofocus-window[Raise the window and give it input focus when it is shown]'
     '--audio-output-buffer=[Configure the size of the SDL audio output buffer (in milliseconds)]'
     '--audio-output-device=[Play the device audio on the computer output device with this name]'
     {-b,--video-bit-rate=}'[Encode the video at the given bit-rate]'
