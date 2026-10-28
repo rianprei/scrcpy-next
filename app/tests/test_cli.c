@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "cli.h"
 #include "options.h"
@@ -175,6 +176,26 @@ static void test_mouse_bind_info(void) {
     };
     char *argv6[] = {"scrcpy", "--otg-automatic-screenshot"};
     assert(!scrcpy_parse_args(&args6, ARRAY_LEN(argv6), argv6)); // requires --otg
+
+    struct scrcpy_cli_args args7 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv7[] = {"scrcpy", "--shortcut-key=v=d", "--shortcut-key=PageUp=u"};
+    assert(scrcpy_parse_args(&args7, ARRAY_LEN(argv7), argv7));
+    assert(args7.opts.shortcut_remaps.count == 2);
+    assert(args7.opts.shortcut_remaps.data[0].from == SDLK_V);
+    assert(args7.opts.shortcut_remaps.data[0].to == SDLK_D);
+    assert(args7.opts.shortcut_remaps.data[1].from == SDLK_PAGEUP);
+    assert(args7.opts.shortcut_remaps.data[1].to == SDLK_U);
+
+    char *bad[][2] = {{"scrcpy", "--shortcut-key=v"}, {"scrcpy", "--shortcut-key==d"},
+                      {"scrcpy", "--shortcut-key=v=nokey"}};
+    for (size_t i = 0; i < ARRAY_LEN(bad); ++i) {
+        struct scrcpy_cli_args a = {
+            .opts = scrcpy_options_default,
+        };
+        assert(!scrcpy_parse_args(&a, 2, bad[i]));
+    }
 }
 
 static void test_camera_focus(void) {

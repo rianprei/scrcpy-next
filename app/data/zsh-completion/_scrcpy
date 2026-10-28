@@ -111,6 +111,7 @@ arguments=(
     {-s,--serial=}'[The device serial number \(mandatory for multiple devices only\)]:serial:($("${ADB-adb}" devices | awk '\''$2 == "device" {print $1}'\''))'
     {-S,--turn-screen-off}'[Turn the device screen off immediately]'
     '--screen-off-timeout=[Set the screen off timeout in seconds]'
+    '--shortcut-key=[Move a shortcut to another key \(from=to\)]'
     '--shortcut-mod=[\[key1,key2+key3,...\] Specify the modifiers to use for scrcpy shortcuts]:shortcut mod:(lctrl rctrl lalt ralt lsuper rsuper)'
     '--start-app=[Start an Android app]'
     '--stream-sink=[Stream the device video and audio as MPEG-TS to the given URL \(srt, udp or tcp\)]'

@@ -40,6 +40,7 @@ sc_input_manager_init(struct sc_input_manager *im,
     im->clipboard_autosync = params->clipboard_autosync;
 
     im->sdl_shortcut_mods = sc_shortcut_mods_to_sdl(params->shortcut_mods);
+    im->shortcut_remaps = params->shortcut_remaps;
 
     im->vfinger_down = false;
     im->vfinger_invert_x = false;
@@ -456,6 +457,23 @@ process_keymap_key(struct sc_input_manager *im, int i, bool down) {
     }
 }
 
+// --shortcut-key: the moved shortcut answers on its new key, and no longer on
+// its original key
+static SDL_Keycode
+remap_shortcut_key(const struct sc_shortcut_remaps *remaps, SDL_Keycode key) {
+    for (unsigned i = 0; i < remaps->count; ++i) {
+        if (key == remaps->data[i].to) {
+            return remaps->data[i].from;
+        }
+    }
+    for (unsigned i = 0; i < remaps->count; ++i) {
+        if (key == remaps->data[i].from) {
+            return SDLK_UNKNOWN;
+        }
+    }
+    return key;
+}
+
 static void
 toggle_keymap(struct sc_input_manager *im) {
     im->keymap_enabled = !im->keymap_enabled;
@@ -688,6 +706,7 @@ sc_input_manager_process_key(struct sc_input_manager *im,
     }
 
     if (is_shortcut) {
+        sdl_keycode = remap_shortcut_key(&im->shortcut_remaps, sdl_keycode);
         enum sc_action action = down ? SC_ACTION_DOWN : SC_ACTION_UP;
         switch (sdl_keycode) {
             case SDLK_Z:

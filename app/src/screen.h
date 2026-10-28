@@ -152,6 +152,7 @@ struct sc_screen_params {
     const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
+    struct sc_shortcut_remaps shortcut_remaps;
     bool keyboard_grab;
     bool otg_automatic_screenshot;
 

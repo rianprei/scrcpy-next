@@ -986,6 +986,7 @@ aoa_complete:
             .keymap = options->keymap ? &s->keymap : NULL,
             .clipboard_autosync = options->clipboard_autosync,
             .shortcut_mods = options->shortcut_mods,
+            .shortcut_remaps = options->shortcut_remaps,
             .keyboard_grab = options->keyboard_grab,
             .window_title = window_title,
             .always_on_top = options->always_on_top,

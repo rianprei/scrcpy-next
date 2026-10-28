@@ -32,6 +32,7 @@ struct sc_input_manager {
     bool clipboard_autosync;
 
     uint16_t sdl_shortcut_mods;
+    struct sc_shortcut_remaps shortcut_remaps;
 
     bool vfinger_down;
     bool vfinger_invert_x;
@@ -86,6 +87,7 @@ struct sc_input_manager_params {
     const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
+    struct sc_shortcut_remaps shortcut_remaps;
 };
 
 void

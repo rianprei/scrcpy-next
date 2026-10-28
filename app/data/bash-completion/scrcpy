@@ -106,6 +106,7 @@ _scrcpy() {
         -s --serial=
         -S --turn-screen-off
         --screen-off-timeout=
+        --shortcut-key=
         --shortcut-mod=
         --start-app=
         --stream-sink=

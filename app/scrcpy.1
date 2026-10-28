@@ -680,6 +680,10 @@ Turn the device screen off immediately.
 Set the screen off timeout while scrcpy is running (restore the initial value on exit).
 
 .TP
+.BI "\-\-shortcut\-key " from=to
+Move a shortcut to another key: with "v=d", MOD+d does what MOD+v did (paste), and MOD+v no longer pastes. Keys are SDL key names (for example "v", "Up" or "PageUp"). This option may be repeated (up to 16 times).
+
+.TP
 .BI "\-\-shortcut\-mod " key\fR[+...]][,...]
 Specify the modifiers to use for scrcpy shortcuts. Possible keys are "lctrl", "rctrl", "lalt", "ralt", "lsuper" and "rsuper".
 

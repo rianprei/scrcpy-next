@@ -879,6 +879,7 @@ sc_screen_init(struct sc_screen *screen,
         .keymap = params->keymap,
         .clipboard_autosync = params->clipboard_autosync,
         .shortcut_mods = params->shortcut_mods,
+        .shortcut_remaps = params->shortcut_remaps,
     };
 
     sc_input_manager_init(&screen->im, &im_params);

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <SDL3/SDL_keyboard.h>
 
 #include "options.h"
 #include "util/log.h"
@@ -41,6 +42,7 @@ enum {
     OPT_DISABLE_SCREENSAVER,
     OPT_DISCONNECT_TIMEOUT,
     OPT_SHORTCUT_MOD,
+    OPT_SHORTCUT_KEY,
     OPT_NO_KEY_REPEAT,
     OPT_LEGACY_PASTE,
     OPT_TEXT_VIA_CLIPBOARD,
@@ -1079,6 +1081,16 @@ static const struct sc_option options[] = {
                 "For example, to use either LCtrl or LSuper for scrcpy "
                 "shortcuts, pass \"lctrl,lsuper\".\n"
                 "Default is \"lalt,lsuper\" (left-Alt or left-Super).",
+    },
+    {
+        .longopt_id = OPT_SHORTCUT_KEY,
+        .longopt = "shortcut-key",
+        .argdesc = "from=to",
+        .text = "Move a shortcut to another key: with \"v=d\", MOD+d does what "
+                "MOD+v did (paste), and MOD+v no longer pastes.\n"
+                "Keys are SDL key names (for example \"v\", \"Up\" or "
+                "\"PageUp\").\n"
+                "This option may be repeated (up to 16 times).",
     },
     {
         .longopt_id = OPT_START_APP,
@@ -2622,6 +2634,41 @@ parse_time_limit(const char *s, sc_tick *tick) {
 }
 
 static bool
+parse_shortcut_remap(const char *s, struct sc_shortcut_remaps *remaps) {
+    const char *eq = strchr(s, '=');
+    if (!eq || eq == s || !eq[1]) {
+        LOGE("Invalid --shortcut-key value: \"%s\" (expected from=to)", s);
+        return false;
+    }
+    if (remaps->count == SC_MAX_SHORTCUT_REMAPS) {
+        LOGE("Too many --shortcut-key (max %d)", SC_MAX_SHORTCUT_REMAPS);
+        return false;
+    }
+
+    char from_name[64];
+    size_t len = eq - s;
+    if (len >= sizeof(from_name)) {
+        LOGE("Invalid --shortcut-key key name: \"%.*s\"", (int) len, s);
+        return false;
+    }
+    memcpy(from_name, s, len);
+    from_name[len] = '\0';
+
+    SDL_Keycode from = SDL_GetKeyFromName(from_name);
+    SDL_Keycode to = SDL_GetKeyFromName(eq + 1);
+    if (from == SDLK_UNKNOWN || to == SDLK_UNKNOWN) {
+        LOGE("Unknown key in --shortcut-key: \"%s\"",
+             from == SDLK_UNKNOWN ? from_name : eq + 1);
+        return false;
+    }
+
+    remaps->data[remaps->count].from = from;
+    remaps->data[remaps->count].to = to;
+    ++remaps->count;
+    return true;
+}
+
+static bool
 parse_disconnect_timeout(const char *s, sc_tick *tick) {
     long value;
     bool ok = parse_integer_arg(s, &value, false, 0, 3600,
@@ -3151,6 +3198,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_SHORTCUT_MOD:
                 if (!parse_shortcut_mods(optarg, &opts->shortcut_mods)) {
+                    return false;
+                }
+                break;
+            case OPT_SHORTCUT_KEY:
+                if (!parse_shortcut_remap(optarg, &opts->shortcut_remaps)) {
                     return false;
                 }
                 break;
