@@ -119,6 +119,8 @@ enum {
     OPT_TOUCHSCREEN_ID,
     OPT_LIST_CLIENT_AUDIO_SOURCES,
     OPT_STREAM_SINK,
+    OPT_CONFIG_FILE,
+    OPT_NO_CONFIG,
 };
 
 struct sc_option {
@@ -358,6 +360,13 @@ static const struct sc_option options[] = {
                 "example \"file:///path/to/audio.mp3\"), played in a loop.\n"
                 "Use --list-client-audio-sources to list the available "
                 "devices.",
+    },
+    {
+        .longopt_id = OPT_CONFIG_FILE,
+        .longopt = "config-file",
+        .argdesc = "path",
+        .text = "Use a custom configuration file instead of the default.\n"
+                "Also see --no-config.",
     },
     {
         .longopt_id = OPT_CROP,
@@ -695,6 +704,12 @@ static const struct sc_option options[] = {
                 "and the device clipboard to the computer clipboard whenever "
                 "it changes.\n"
                 "This option disables this automatic synchronization."
+    },
+    {
+        .longopt_id = OPT_NO_CONFIG,
+        .longopt = "no-config",
+        .text = "Do not load a configuration file.\n"
+                "Also see --config-file.",
     },
     {
         .longopt_id = OPT_NO_DOWNSIZE_ON_ERROR,
@@ -1342,6 +1357,10 @@ static const struct sc_envvar envvars[] = {
                 "--tcpip=<addr>) is specified",
     },
     {
+        .name = "SCRCPY_CONFIG_FILE",
+        .text = "Path to the configuration file (see --config-file)",
+    },
+    {
         .name = "SCRCPY_ICON_DIR",
         .text = "Path to the icon directory",
     },
@@ -1465,6 +1484,49 @@ static void
 sc_getopt_adapter_destroy(struct sc_getopt_adapter *adapter) {
     free(adapter->optstring);
     free(adapter->longopts);
+}
+
+bool
+scrcpy_preparse_args(int argc, char *argv[],
+                     struct scrcpy_cli_preparse *preparse) {
+    struct sc_getopt_adapter adapter;
+    if (!sc_getopt_adapter_init(&adapter)) {
+        return false;
+    }
+
+    char **argv_copy = malloc(((size_t) argc + 1) * sizeof(*argv_copy));
+    if (!argv_copy) {
+        LOG_OOM();
+        sc_getopt_adapter_destroy(&adapter);
+        return false;
+    }
+    memcpy(argv_copy, argv, (size_t) argc * sizeof(*argv_copy));
+    argv_copy[argc] = NULL;
+
+    struct scrcpy_cli_preparse result = {0};
+    optind = 0;
+    int previous_opterr = opterr;
+    opterr = 0;
+
+    int c;
+    while ((c = getopt_long(argc, argv_copy, adapter.optstring,
+                            adapter.longopts, NULL)) != -1) {
+        if (c == OPT_CONFIG_FILE) {
+            result.config_path = optarg;
+        } else if (c == OPT_NO_CONFIG) {
+            result.config_disabled = true;
+        }
+    }
+
+    if (argc - optind == 1) {
+        result.profile = argv_copy[optind];
+    }
+
+    opterr = previous_opterr;
+    free(argv_copy);
+    sc_getopt_adapter_destroy(&adapter);
+    *preparse = result;
+    return true;
 }
 
 static void
@@ -1641,7 +1703,8 @@ scrcpy_print_usage(const char *arg0) {
         }
     }
 
-    printf("Usage: %s [options]\n\n"
+    printf("Usage: %s [options] [profile]\n\n"
+            "  profile    Select a named configuration section\n\n"
             "Options:\n", arg0);
     for (size_t i = 0; i < ARRAY_LEN(options); ++i) {
         print_option_usage(&options[i], cols);
@@ -3136,6 +3199,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+            case OPT_CONFIG_FILE:
+            case OPT_NO_CONFIG:
+                break;
             default:
                 // getopt prints the error message on stderr
                 return false;
@@ -3143,6 +3209,10 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     }
 
     int index = optind;
+    if (index < argc && args->profile
+            && !strcmp(argv[index], args->profile)) {
+        ++index;
+    }
     if (index < argc) {
         LOGE("Unexpected additional argument: %s", argv[index]);
         return false;

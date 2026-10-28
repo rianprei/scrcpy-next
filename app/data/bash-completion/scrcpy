@@ -23,6 +23,7 @@ _scrcpy() {
         --camera-zoom=
         --capture-orientation=
         --client-audio-source=
+        --config-file=
         --crop=
         -d --select-usb
         --disable-screensaver
@@ -63,6 +64,7 @@ _scrcpy() {
         --no-audio-playback
         --no-cleanup
         --no-clipboard-autosync
+        --no-config
         --no-downsize-on-error
         --no-key-repeat
         --no-mipmaps
@@ -177,7 +179,7 @@ _scrcpy() {
             COMPREPLY=($(compgen -W 'true false if-error' -- "$cur"))
             return
             ;;
-        -r|--record)
+        --config-file|-r|--record)
             COMPREPLY=($(compgen -f -- "$cur"))
             return
             ;;

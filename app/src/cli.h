@@ -16,14 +16,25 @@ enum sc_pause_on_exit {
 
 struct scrcpy_cli_args {
     struct scrcpy_options opts;
+    const char *profile;
     bool help;
     bool version;
     bool list_client_audio_sources;
     enum sc_pause_on_exit pause_on_exit;
 };
 
+struct scrcpy_cli_preparse {
+    const char *config_path;
+    const char *profile;
+    bool config_disabled;
+};
+
 void
 scrcpy_print_usage(const char *arg0);
+
+bool
+scrcpy_preparse_args(int argc, char *argv[],
+                     struct scrcpy_cli_preparse *preparse);
 
 bool
 scrcpy_parse_args(struct scrcpy_cli_args *args, int argc, char *argv[]);
