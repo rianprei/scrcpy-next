@@ -3843,6 +3843,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         }
     }
 
+    if (opts->stream_sink && opts->video && opts->video_codec == SC_CODEC_MJPEG) {
+        LOGE("--stream-sink is not supported with the mjpeg video codec");
+        return false;
+    }
+
     if (opts->audio_codec == SC_CODEC_FLAC && opts->audio_bit_rate) {
         LOGW("--audio-bit-rate is ignored for FLAC audio codec");
     }

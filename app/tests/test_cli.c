@@ -150,6 +150,12 @@ static void test_mouse_bind_info(void) {
     assert(args3.opts.disconnect_timeout == SC_TICK_FROM_SEC(10));
     assert(!args3.opts.server_push);
     assert(scrcpy_options_default.server_push);
+
+    struct scrcpy_cli_args args4 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv4[] = {"scrcpy", "--video-codec=mjpeg", "--stream-sink=tcp://127.0.0.1:1234"};
+    assert(!scrcpy_parse_args(&args4, ARRAY_LEN(argv4), argv4));
 }
 
 static void test_camera_focus(void) {
