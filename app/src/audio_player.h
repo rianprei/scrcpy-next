@@ -22,6 +22,8 @@ struct sc_audio_player {
     // SDL audio output buffer size
     sc_tick output_buffer_duration;
 
+    const char *device_name; // NULL for the default output device
+
     uint8_t *aout_buffer;
     size_t aout_buffer_size;
 
@@ -32,6 +34,6 @@ struct sc_audio_player {
 
 void
 sc_audio_player_init(struct sc_audio_player *ap, sc_tick target_buffering,
-                     sc_tick audio_output_buffer);
+                     sc_tick audio_output_buffer, const char *device_name);
 
 #endif

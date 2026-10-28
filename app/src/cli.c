@@ -78,6 +78,7 @@ enum {
     OPT_REQUIRE_AUDIO,
     OPT_AUDIO_BUFFER,
     OPT_AUDIO_OUTPUT_BUFFER,
+    OPT_AUDIO_OUTPUT_DEVICE,
     OPT_NO_VIDEO,
     OPT_NO_AUDIO_PLAYBACK,
     OPT_NO_VIDEO_PLAYBACK,
@@ -272,6 +273,15 @@ static const struct sc_option options[] = {
                 "milliseconds).\n"
                 "Do not change this setting unless you have a good reason.\n"
                 "Default is 10.",
+    },
+    {
+        .longopt_id = OPT_AUDIO_OUTPUT_DEVICE,
+        .longopt = "audio-output-device",
+        .argdesc = "name",
+        .text = "Play the device audio on the computer audio output device "
+                "with this name (as listed by the operating system), instead "
+                "of the default one. If no device matches, the available "
+                "names are listed.",
     },
     {
         .shortopt = 'b',
@@ -3284,6 +3294,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                                                &opts->audio_output_buffer)) {
                     return false;
                 }
+                break;
+            case OPT_AUDIO_OUTPUT_DEVICE:
+                opts->audio_output_device = optarg;
                 break;
             case OPT_VIDEO_SOURCE:
                 if (!parse_video_source(optarg, &opts->video_source)) {

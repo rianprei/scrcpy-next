@@ -1,5 +1,7 @@
 #include "audio_player.h"
 
+#include <string.h>
+
 #include "util/log.h"
 #include "util/memory.h"
 #include "SDL3/SDL_hints.h"
@@ -45,6 +47,36 @@ sc_audio_player_frame_sink_push(struct sc_frame_sink *sink,
 
     bool ok = sc_audio_regulator_push(&ap->audioreg, frame);
     return ok ? SC_SINK_OK : SC_SINK_KO;
+}
+
+// Return the playback device with this name, or 0 (after listing the names)
+static SDL_AudioDeviceID
+sc_audio_player_find_device(const char *name) {
+    int count;
+    SDL_AudioDeviceID *ids = SDL_GetAudioPlaybackDevices(&count);
+    if (!ids) {
+        LOGE("Could not list audio output devices: %s", SDL_GetError());
+        return 0;
+    }
+
+    SDL_AudioDeviceID found = 0;
+    for (int i = 0; i < count && !found; ++i) {
+        const char *device_name = SDL_GetAudioDeviceName(ids[i]);
+        if (device_name && !strcmp(device_name, name)) {
+            found = ids[i];
+        }
+    }
+
+    if (!found) {
+        LOGE("Audio output device not found: \"%s\". Available devices:", name);
+        for (int i = 0; i < count; ++i) {
+            const char *device_name = SDL_GetAudioDeviceName(ids[i]);
+            LOGE("    \"%s\"", device_name ? device_name : "(unknown)");
+        }
+    }
+
+    SDL_free(ids);
+    return found;
 }
 
 static bool
@@ -103,8 +135,17 @@ sc_audio_player_frame_sink_open(struct sc_frame_sink *sink,
         .channels = nb_channels,
     };
 
-    ap->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
-                                           &spec,
+    SDL_AudioDeviceID devid = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+    if (ap->device_name) {
+        devid = sc_audio_player_find_device(ap->device_name);
+        if (!devid) {
+            free(ap->aout_buffer);
+            sc_audio_regulator_destroy(&ap->audioreg);
+            return false;
+        }
+    }
+
+    ap->stream = SDL_OpenAudioDeviceStream(devid, &spec,
                                            sc_audio_player_stream_callback, ap);
     if (!ap->stream) {
         LOGE("Could not open audio device: %s", SDL_GetError());
@@ -146,9 +187,10 @@ sc_audio_player_frame_sink_close(struct sc_frame_sink *sink) {
 
 void
 sc_audio_player_init(struct sc_audio_player *ap, sc_tick target_buffering,
-                     sc_tick output_buffer_duration) {
+                     sc_tick output_buffer_duration, const char *device_name) {
     ap->target_buffering_delay = target_buffering;
     ap->output_buffer_duration = output_buffer_duration;
+    ap->device_name = device_name;
 
     static const struct sc_frame_sink_ops ops = {
         .open = sc_audio_player_frame_sink_open,

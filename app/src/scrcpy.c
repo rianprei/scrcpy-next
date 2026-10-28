@@ -1090,7 +1090,8 @@ aoa_complete:
 
     if (options->audio_playback) {
         sc_audio_player_init(&s->audio_player, options->audio_buffer,
-                             options->audio_output_buffer);
+                             options->audio_output_buffer,
+                             options->audio_output_device);
         sc_frame_source_add_sink(&s->audio_decoder.frame_source,
                                  &s->audio_player.frame_sink);
     }

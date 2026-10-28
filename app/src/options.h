@@ -321,6 +321,7 @@ struct scrcpy_options {
     sc_tick video_buffer;
     sc_tick audio_buffer;
     sc_tick audio_output_buffer;
+    const char *audio_output_device; // NULL for the default device
     sc_tick time_limit;
     sc_tick screen_off_timeout;
     sc_tick disconnect_timeout;

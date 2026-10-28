@@ -11,6 +11,7 @@ _scrcpy() {
         --audio-encoder=
         --audio-source=
         --audio-output-buffer=
+        --audio-output-device=
         -b --video-bit-rate=
         --background-color=
         --camera-ar=
@@ -242,6 +243,7 @@ _scrcpy() {
         |--audio-codec-options \
         |--audio-encoder \
         |--audio-output-buffer \
+        |--audio-output-device \
         |--background-color \
         |--camera-ar \
         |--camera-id \
