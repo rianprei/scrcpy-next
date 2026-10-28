@@ -24,6 +24,7 @@
 #include "keyboard_sdk.h"
 #include "latency_stats.h"
 #include "mouse_sdk.h"
+#include "keymap.h"
 #include "recorder.h"
 #include "screen.h"
 #include "sdl_hints.h"
@@ -68,6 +69,7 @@ struct scrcpy {
     struct sc_decoder video_decoder;
     struct sc_decoder audio_decoder;
     struct sc_hwdec hwdec;
+    struct sc_keymap keymap;
     struct sc_recorder recorder;
     struct sc_video_regulator video_regulator;
     struct sc_stream_sink stream_sink;
@@ -423,6 +425,11 @@ scrcpy(struct scrcpy_options *options) {
     }
 
     atexit(SDL_Quit);
+
+    // Fail before starting the server if the keymap is invalid
+    if (options->keymap && !sc_keymap_load(&s->keymap, options->keymap)) {
+        return SCRCPY_EXIT_FAILURE;
+    }
 
     enum scrcpy_exit_code ret = SCRCPY_EXIT_FAILURE;
 
@@ -928,6 +935,7 @@ aoa_complete:
             .mouse_bindings = options->mouse_bindings,
             .legacy_paste = options->legacy_paste,
             .trackpad = options->trackpad,
+            .keymap = options->keymap ? &s->keymap : NULL,
             .clipboard_autosync = options->clipboard_autosync,
             .shortcut_mods = options->shortcut_mods,
             .window_title = window_title,

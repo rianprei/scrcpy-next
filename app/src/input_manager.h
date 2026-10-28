@@ -10,6 +10,7 @@
 
 #include "controller.h"
 #include "file_pusher.h"
+#include "keymap.h"
 #include "options.h"
 #include "trait/gamepad_processor.h"
 #include "trait/key_processor.h"
@@ -51,6 +52,10 @@ struct sc_input_manager {
         float gain;             // frame pixels per normalized trackpad unit
     } tp;
 
+    // --keymap: keys mapped to touches on the device screen
+    const struct sc_keymap *keymap; // NULL if disabled
+    uint32_t keymap_down; // bit i is set while entry i touches the screen
+
     uint8_t mouse_buttons_state; // OR of enum sc_mouse_button values
 
     // Tracks the number of identical consecutive shortcut key down events.
@@ -77,6 +82,7 @@ struct sc_input_manager_params {
     struct sc_mouse_bindings mouse_bindings;
     bool legacy_paste;
     bool trackpad;
+    const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
 };

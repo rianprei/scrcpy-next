@@ -43,6 +43,7 @@ enum {
     OPT_LEGACY_PASTE,
     OPT_CLIENT_AUDIO_SOURCE,
     OPT_TRACKPAD,
+    OPT_KEYMAP,
     OPT_VIDEO_ENCODER,
     OPT_VIDEO_DECODER,
     OPT_POWER_OFF_ON_CLOSE,
@@ -529,6 +530,20 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_KILL_ADB_ON_CLOSE,
         .longopt = "kill-adb-on-close",
         .text = "Kill adb when scrcpy terminates.",
+    },
+    {
+        .longopt_id = OPT_KEYMAP,
+        .longopt = "keymap",
+        .argdesc = "file",
+        .text = "Map computer keys to touches on the device screen (for "
+                "games).\n"
+                "Each line of the file is \"<key> <x> <y>\", where <key> is "
+                "an SDL key name (for example \"Space\", \"W\" or \"Left "
+                "Shift\") and <x> <y> are in [0; 1], relative to the device "
+                "screen (0 0 is the top-left corner). Lines starting with '#' "
+                "are ignored.\n"
+                "A mapped key touches the screen while it is pressed, and is "
+                "not forwarded as a key event. Shortcuts keep working.",
     },
     {
         .longopt_id = OPT_TRACKPAD,
@@ -2981,6 +2996,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_TRACKPAD:
                 opts->trackpad = true;
+                break;
+            case OPT_KEYMAP:
+                opts->keymap = optarg;
                 break;
             case OPT_POWER_OFF_ON_CLOSE:
                 opts->power_off_on_close = true;

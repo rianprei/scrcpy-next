@@ -28,6 +28,8 @@
 // Two pointers driven by the computer trackpad (--trackpad)
 #define SC_POINTER_ID_TRACKPAD_FINGER_A UINT64_C(-4)
 #define SC_POINTER_ID_TRACKPAD_FINGER_B UINT64_C(-5)
+// Touches of --keymap entries: SC_POINTER_ID_KEYMAP_BASE + entry index
+#define SC_POINTER_ID_KEYMAP_BASE UINT64_C(-64)
 
 enum sc_control_msg_type {
     SC_CONTROL_MSG_TYPE_INJECT_KEYCODE,

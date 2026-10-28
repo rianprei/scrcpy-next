@@ -680,6 +680,14 @@ Set the maximum mirroring time, in seconds.
 Associate a touchscreen connected to the device (identified by its input device descriptor, see "adb shell dumpsys input") with the display mirrored by scrcpy, so that its touches are routed to that display (typically a display created by \fB\-\-new\-display\fR).
 
 .TP
+.BI "\-\-keymap " file
+Map computer keys to touches on the device screen (for games).
+
+Each line of the file is "<key> <x> <y>", where <key> is an SDL key name (for example "Space", "W" or "Left Shift") and <x> <y> are in [0; 1], relative to the device screen (0 0 is the top-left corner). Lines starting with '#' are ignored.
+
+A mapped key touches the screen while it is pressed, and is not forwarded as a key event. Shortcuts keep working.
+
+.TP
 .B \-\-trackpad
 Turn two-finger gestures on the computer trackpad into two touch pointers on the device, anchored at the mouse cursor: pinch to zoom, rotate, and two-finger slides in any direction.
 

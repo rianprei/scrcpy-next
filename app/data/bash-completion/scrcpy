@@ -106,6 +106,7 @@ _scrcpy() {
         --time-limit=
         --touchscreen-id=
         --trackpad
+        --keymap=
         --tunnel-host=
         --tunnel-port=
         --v4l2-buffer=
@@ -182,7 +183,7 @@ _scrcpy() {
             COMPREPLY=($(compgen -W 'true false if-error' -- "$cur"))
             return
             ;;
-        --config-file|-r|--record)
+        --config-file|--keymap|-r|--record)
             COMPREPLY=($(compgen -f -- "$cur"))
             return
             ;;

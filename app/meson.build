@@ -23,6 +23,7 @@ src = [
     'src/hwdec.c',
     'src/icon.c',
     'src/input_manager.c',
+    'src/keymap.c',
     'src/keyboard_sdk.c',
     'src/latency_stats.c',
     'src/mouse_capture.c',
@@ -361,6 +362,11 @@ if get_option('buildtype') == 'debug'
         ['test_gamepad_axis_queue', [
             'tests/test_gamepad_axis_queue.c',
             'src/hid/gamepad_axis_queue.c',
+        ]],
+        ['test_keymap', [
+            'tests/test_keymap.c',
+            'src/keymap.c',
+            'src/util/log.c',
         ]],
         ['test_orientation', [
             'tests/test_orientation.c',

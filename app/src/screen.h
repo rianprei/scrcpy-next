@@ -130,6 +130,7 @@ struct sc_screen_params {
     struct sc_mouse_bindings mouse_bindings;
     bool legacy_paste;
     bool trackpad;
+    const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
 

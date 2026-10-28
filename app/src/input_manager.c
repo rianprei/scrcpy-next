@@ -52,6 +52,10 @@ sc_input_manager_init(struct sc_input_manager *im,
     im->tp.active = false;
     im->tp.count = 0;
 
+    static_assert(SC_KEYMAP_MAX_ENTRIES <= 32, "keymap_down is 32 bits");
+    im->keymap = params->keymap;
+    im->keymap_down = 0;
+
     im->mouse_buttons_state = 0;
 
     im->last_keycode = SDLK_UNKNOWN;
@@ -413,6 +417,27 @@ inject_finger(struct sc_input_manager *im,
     }
 
     return true;
+}
+
+static void
+process_keymap_key(struct sc_input_manager *im, int i, bool down) {
+    uint32_t bit = UINT32_C(1) << i;
+    if (down == !!(im->keymap_down & bit)) {
+        // already in this state (e.g. key released after a disconnection)
+        return;
+    }
+
+    const struct sc_keymap_entry *entry = &im->keymap->entries[i];
+    struct sc_size frame = im->screen->frame_size;
+    struct sc_point point = {
+        .x = (int32_t) (entry->x * (frame.width - 1)),
+        .y = (int32_t) (entry->y * (frame.height - 1)),
+    };
+    enum android_motionevent_action action = down ? AMOTION_EVENT_ACTION_DOWN
+                                                  : AMOTION_EVENT_ACTION_UP;
+    if (inject_finger(im, action, point, SC_POINTER_ID_KEYMAP_BASE + i)) {
+        im->keymap_down ^= bit;
+    }
 }
 
 static bool
@@ -855,6 +880,17 @@ sc_input_manager_process_key(struct sc_input_manager *im,
         }
 
         return;
+    }
+
+    if (im->keymap && control && !disconnected) {
+        int i = sc_keymap_find(im->keymap, sdl_keycode);
+        if (i != -1) {
+            // A release is always processed, so that no touch stays down
+            if (!repeat && (!down || (video && !paused))) {
+                process_keymap_key(im, i, down);
+            }
+            return;
+        }
     }
 
     if (!im->kp || paused) {

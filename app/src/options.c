@@ -102,6 +102,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .forward_key_repeat = true,
     .legacy_paste = false,
     .trackpad = false,
+    .keymap = NULL,
     .power_off_on_close = false,
     .clipboard_autosync = true,
     .downsize_on_error = true,
