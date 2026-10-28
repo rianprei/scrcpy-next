@@ -732,6 +732,8 @@ sc_screen_init(struct sc_screen *screen,
     screen->render_fit = params->render_fit;
     screen->flex_display = params->flex_display;
     screen->embedded = false;
+    const char *video_driver = SDL_GetCurrentVideoDriver();
+    screen->kmsdrm = video_driver && !strcmp(video_driver, "kmsdrm");
     screen->reconnect = params->reconnect;
     screen->owns_window = true;
     screen->awaiting_first_frame = false;
@@ -749,7 +751,8 @@ sc_screen_init(struct sc_screen *screen,
     screen->req.y = params->window_y;
     screen->req.width = params->window_width;
     screen->req.height = params->window_height;
-    screen->req.fullscreen = params->fullscreen;
+    // The KMSDRM driver switches to a low resolution in windowed mode
+    screen->req.fullscreen = params->fullscreen || screen->kmsdrm;
     screen->req.start_fps_counter = params->start_fps_counter;
     screen->req.autofocus_window = params->autofocus_window;
 
@@ -1370,6 +1373,12 @@ sc_screen_toggle_fullscreen(struct sc_screen *screen) {
 
     if (screen->embedded) {
         LOGW("Fullscreen is disabled for an embedded window");
+        return;
+    }
+
+    if (screen->kmsdrm
+            && (SDL_GetWindowFlags(screen->window) & SDL_WINDOW_FULLSCREEN)) {
+        LOGD("Leaving fullscreen is not supported with KMSDRM");
         return;
     }
 

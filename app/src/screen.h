@@ -40,6 +40,7 @@ struct sc_screen {
     bool window_aspect_ratio_lock;
     bool flex_display;
     bool embedded; // --window-parent
+    bool kmsdrm; // the KMSDRM video driver only works fullscreen
     sc_tick disconnect_timeout;
     bool reconnect;
     // false once the window has been released to the caller
