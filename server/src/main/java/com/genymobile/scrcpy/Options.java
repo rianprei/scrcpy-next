@@ -67,6 +67,7 @@ public class Options {
     private boolean mediaControl;
     private boolean downsizeOnError = true;
     private boolean cleanup = true;
+    private boolean keepServer;
     private boolean powerOn = true;
     private boolean latencyStats;
 
@@ -267,6 +268,10 @@ public class Options {
 
     public boolean getCleanup() {
         return cleanup;
+    }
+
+    public boolean getKeepServer() {
+        return keepServer;
     }
 
     public boolean getPowerOn() {
@@ -505,6 +510,9 @@ public class Options {
                     break;
                 case "cleanup":
                     options.cleanup = Boolean.parseBoolean(value);
+                    break;
+                case "keep_server":
+                    options.keepServer = Boolean.parseBoolean(value);
                     break;
                 case "power_on":
                     options.powerOn = Boolean.parseBoolean(value);

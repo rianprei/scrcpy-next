@@ -794,9 +794,10 @@ static const struct sc_option options[] = {
     {
         .longopt_id = OPT_NO_SERVER_PUSH,
         .longopt = "no-server-push",
-        .text = "Do not push the server to the device: use the one already "
-                "pushed by a previous run (it must be the same version), to "
-                "start faster over a slow connection.",
+        .text = "Do not push the server if it is already on the device, and "
+                "keep it there on exit, to start faster over a slow "
+                "connection. It must be the same version as the client "
+                "(otherwise run once without this option).",
     },
     {
         .longopt_id = OPT_NO_TERMINAL_TITLE,
@@ -3469,6 +3470,14 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 return false;
             }
             LOGI("V4L2 sink enabled, hardware decoding disabled");
+            opts->hwdec_mode = SC_HWDEC_MODE_DISABLED;
+        } else if (opts->video_codec == SC_CODEC_MJPEG) {
+            // The hardware interops only accept NV12/P010 frames, while the
+            // JPEG decoder outputs planar YUV
+            if (opts->hwdec_mode != SC_HWDEC_MODE_AUTO) {
+                LOGE("Hardware decoding is not supported with mjpeg");
+                return false;
+            }
             opts->hwdec_mode = SC_HWDEC_MODE_DISABLED;
         }
     }

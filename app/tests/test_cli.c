@@ -158,6 +158,13 @@ static void test_mouse_bind_info(void) {
     };
     char *argv4[] = {"scrcpy", "--video-codec=mjpeg", "--stream-sink=tcp://127.0.0.1:1234"};
     assert(!scrcpy_parse_args(&args4, ARRAY_LEN(argv4), argv4));
+
+    struct scrcpy_cli_args args5 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv5[] = {"scrcpy", "--video-codec=mjpeg"};
+    assert(scrcpy_parse_args(&args5, ARRAY_LEN(argv5), argv5));
+    assert(args5.opts.hwdec_mode == SC_HWDEC_MODE_DISABLED);
 }
 
 static void test_camera_focus(void) {

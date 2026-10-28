@@ -95,6 +95,7 @@ public class JpegEncoder implements AsyncProcessor {
                     streamer.writeSessionMeta(size.getWidth(), size.getHeight(), isClientResize);
 
                     while (!stopped.get() && !captureControl.isResetRequested()) {
+                        long deadline = SystemClock.uptimeMillis() + frameIntervalMs;
                         Image image = imageReader.acquireLatestImage();
                         if (image != null) {
                             try {
@@ -103,7 +104,11 @@ public class JpegEncoder implements AsyncProcessor {
                                 image.close();
                             }
                         }
-                        SystemClock.sleep(frameIntervalMs);
+                        // Only wait for the rest of the frame interval (the JPEG compression took some of it)
+                        long remaining = deadline - SystemClock.uptimeMillis();
+                        if (remaining > 0) {
+                            SystemClock.sleep(remaining);
+                        }
                     }
 
                     alive = !stopped.get() && !capture.isClosed();

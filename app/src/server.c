@@ -424,6 +424,10 @@ execute_server(struct sc_server *server,
         // By default, downsize_on_error is true
         ADD_PARAM("downsize_on_error=false");
     }
+    if (!params->server_push) {
+        // Keep the server on the device for the next --no-server-push run
+        ADD_PARAM("keep_server=true");
+    }
     if (!params->cleanup) {
         // By default, cleanup is true
         ADD_PARAM("cleanup=false");
@@ -1115,14 +1119,16 @@ run_server(void *data) {
     assert(serial);
     LOGD("Device serial: %s", serial);
 
-    if (server->params.server_push) {
+    if (!server->params.server_push
+            && sc_adb_shell_file_exists(&server->intr, serial,
+                                        SC_DEVICE_SERVER_PATH, SC_ADB_SILENT)) {
+        // A version mismatch is detected by the server on start
+        LOGI("Server not pushed, using " SC_DEVICE_SERVER_PATH);
+    } else {
         ok = push_server(&server->intr, serial);
         if (!ok) {
             goto error_connection_failed;
         }
-    } else {
-        // A version mismatch is detected by the server on start
-        LOGI("Server not pushed, using " SC_DEVICE_SERVER_PATH);
     }
 
     // If --list-* is passed, then the server just prints the requested data

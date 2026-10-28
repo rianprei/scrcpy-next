@@ -355,6 +355,19 @@ sc_adb_shell_mkdir(struct sc_intr *intr, const char *serial, const char *path,
 }
 
 bool
+sc_adb_shell_file_exists(struct sc_intr *intr, const char *serial,
+                         const char *path, unsigned flags) {
+    assert(serial);
+    assert(path);
+    const char *const argv[] =
+        SC_ADB_COMMAND("-s", serial, "shell", "test", "-f", path);
+
+    sc_pid pid = sc_adb_execute(argv, flags);
+
+    return process_check_success_intr(intr, pid, "adb shell test", flags);
+}
+
+bool
 sc_adb_install(struct sc_intr *intr, const char *serial, const char *local,
                unsigned flags) {
     assert(serial);
