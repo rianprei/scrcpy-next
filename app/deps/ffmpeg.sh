@@ -63,6 +63,9 @@ else
         --enable-decoder=vp8
         --enable-decoder=vp9
         --enable-decoder=libdav1d
+        # --video-codec=mjpeg and --video-codec=apv
+        --enable-decoder=mjpeg
+        --enable-decoder=apv
         --enable-decoder=pcm_s16le
         --enable-decoder=opus
         --enable-decoder=aac
@@ -102,6 +105,11 @@ else
             --enable-hwaccel=av1_vaapi
             --enable-hwaccel=vp8_vaapi
             --enable-hwaccel=vp9_vaapi
+            # Client audio: capture a microphone with ALSA (also served by
+            # PipeWire and PulseAudio) and encode it to Opus
+            --enable-indev=alsa
+            --enable-libopus
+            --enable-encoder=libopus
         )
     elif [[ "$HOST" == win* ]]
     then
@@ -110,9 +118,6 @@ else
         )
     else
         conf+=(
-            # libavdevice is only used for V4L2 on Linux and for client audio
-            # capture on Windows
-            --disable-avdevice
             --disable-vaapi
         )
     fi
@@ -146,6 +151,11 @@ else
             --enable-hwaccel=hevc_videotoolbox
             --enable-hwaccel=av1_videotoolbox
             --enable-hwaccel=vp9_videotoolbox
+            # Client audio: capture a microphone with AVFoundation and encode
+            # it to Opus
+            --enable-indev=avfoundation
+            --enable-libopus
+            --enable-encoder=libopus
         )
     fi
 
