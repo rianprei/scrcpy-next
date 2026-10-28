@@ -91,6 +91,7 @@ arguments=(
     '--no-window-aspect-ratio-lock[Disable window aspect ratio lock]'
     '--orientation=[Set the video orientation]:orientation values:(0 90 180 270 flip0 flip90 flip180 flip270)'
     '--otg[Run in OTG mode \(simulating physical keyboard and mouse\)]'
+    '--otg-automatic-screenshot[Take a device screenshot each time the mouse capture is released in OTG mode]'
     {-p,--port=}'[\[port\[\:port\]\] Set the TCP port \(range\) used by the client to listen]'
     '--pause-on-exit=[Make scrcpy pause before exiting]:mode:(true false if-error)'
     '--power-off-on-close[Turn the device screen off when closing scrcpy]'

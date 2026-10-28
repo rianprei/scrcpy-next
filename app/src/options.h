@@ -330,6 +330,7 @@ struct scrcpy_options {
     const char *stream_sink;
 #ifdef HAVE_USB
     bool otg;
+    bool otg_automatic_screenshot;
 #endif
 #ifdef HAVE_MPRIS
     bool mpris;

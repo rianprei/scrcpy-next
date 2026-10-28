@@ -61,6 +61,7 @@ enum {
     OPT_RAW_KEY_EVENTS,
     OPT_NO_DOWNSIZE_ON_ERROR,
     OPT_OTG,
+    OPT_OTG_AUTOMATIC_SCREENSHOT,
     OPT_NO_CLEANUP,
     OPT_PRINT_FPS,
     OPT_LATENCY_STATS,
@@ -875,6 +876,14 @@ static const struct sc_option options[] = {
                 "--keyboard=disabled and --mouse=disabled.\n"
                 "It may only work over USB.\n"
                 "See --keyboard, --mouse and --gamepad.",
+    },
+    {
+        .longopt_id = OPT_OTG_AUTOMATIC_SCREENSHOT,
+        .longopt = "otg-automatic-screenshot",
+        .text = "Take a screenshot on the device (PrintScreen key) each time "
+                "the mouse capture is released in OTG mode, to see where the "
+                "pointer is (for example, to enable USB debugging on a phone "
+                "with a broken screen).",
     },
     {
         .shortopt = 'p',
@@ -3188,6 +3197,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+            case OPT_OTG_AUTOMATIC_SCREENSHOT:
+                opts->otg_automatic_screenshot = true;
+                break;
             case OPT_OTG:
 #ifdef HAVE_USB
                 opts->otg = true;
@@ -3437,6 +3449,10 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
 #ifdef HAVE_USB
     otg = opts->otg;
 #endif
+    if (opts->otg_automatic_screenshot && !otg) {
+        LOGE("--otg-automatic-screenshot requires --otg");
+        return false;
+    }
 #ifdef HAVE_V4L2
     v4l2 = !!opts->v4l2_device;
 #endif

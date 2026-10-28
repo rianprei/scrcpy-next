@@ -233,6 +233,7 @@ scrcpy_otg(struct scrcpy_options *options) {
         .mipmaps = options->mipmaps,
         .fullscreen = false,
         .start_fps_counter = false,
+        .otg_automatic_screenshot = options->otg_automatic_screenshot,
     };
 
     ok = sc_screen_init(&s->screen, &params);

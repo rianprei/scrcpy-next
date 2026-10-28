@@ -85,6 +85,7 @@ _scrcpy() {
         --no-window-aspect-ratio-lock
         --orientation=
         --otg
+        --otg-automatic-screenshot
         -p --port=
         --pause-on-exit
         --pause-on-exit=

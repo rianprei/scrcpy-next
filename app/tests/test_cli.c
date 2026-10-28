@@ -169,6 +169,12 @@ static void test_mouse_bind_info(void) {
     char *argv5[] = {"scrcpy", "--video-codec=mjpeg"};
     assert(scrcpy_parse_args(&args5, ARRAY_LEN(argv5), argv5));
     assert(args5.opts.hwdec_mode == SC_HWDEC_MODE_DISABLED);
+
+    struct scrcpy_cli_args args6 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv6[] = {"scrcpy", "--otg-automatic-screenshot"};
+    assert(!scrcpy_parse_args(&args6, ARRAY_LEN(argv6), argv6)); // requires --otg
 }
 
 static void test_camera_focus(void) {

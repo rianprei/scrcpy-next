@@ -82,6 +82,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .stream_sink = NULL,
 #ifdef HAVE_USB
     .otg = false,
+    .otg_automatic_screenshot = false,
 #endif
 #ifdef HAVE_MPRIS
     .mpris = false,

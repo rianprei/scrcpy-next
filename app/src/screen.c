@@ -8,6 +8,7 @@
 #include "icon.h"
 #include "latency_stats.h"
 #include "options.h"
+#include "util/acksync.h"
 #include "util/log.h"
 #ifdef _WIN32
 # include "sys/win/darkmode.h"
@@ -597,6 +598,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->owns_window = true;
     screen->awaiting_first_frame = false;
     screen->keyboard_grab = params->keyboard_grab;
+    screen->otg_automatic_screenshot = params->otg_automatic_screenshot;
 
     screen->bg.r = (params->background_color >> 16) & 0xFF;
     screen->bg.g = (params->background_color >> 8) & 0xFF;
@@ -1310,6 +1312,27 @@ sc_disconnect_on_timeout(struct sc_disconnect *d, void *userdata) {
     (void) ok; // ignore failure
 }
 
+// Press PrintScreen on the device keyboard (--otg-automatic-screenshot)
+static void
+sc_screen_take_device_screenshot(struct sc_screen *screen) {
+    struct sc_key_processor *kp = screen->im.kp;
+    if (!kp) {
+        return;
+    }
+
+    LOGI("Taking a screenshot on the device");
+    struct sc_key_event evt = {
+        .action = SC_ACTION_DOWN,
+        .keycode = SC_KEYCODE_PRINTSCREEN,
+        .scancode = SC_SCANCODE_PRINTSCREEN,
+        .repeat = false,
+        .mods_state = 0,
+    };
+    kp->ops->process_key(kp, &evt, SC_SEQUENCE_INVALID);
+    evt.action = SC_ACTION_UP;
+    kp->ops->process_key(kp, &evt, SC_SEQUENCE_INVALID);
+}
+
 void
 sc_screen_handle_event(struct sc_screen *screen, const SDL_Event *event) {
     switch (event->type) {
@@ -1419,10 +1442,17 @@ sc_screen_handle_event(struct sc_screen *screen, const SDL_Event *event) {
         return;
     }
 
-    if (sc_screen_is_relative_mode(screen)
-            && sc_mouse_capture_handle_event(&screen->mc, event)) {
-        // The mouse capture handler consumed the event
-        return;
+    if (sc_screen_is_relative_mode(screen)) {
+        bool was_captured = sc_mouse_capture_is_active(&screen->mc);
+        bool consumed = sc_mouse_capture_handle_event(&screen->mc, event);
+        if (screen->otg_automatic_screenshot && was_captured
+                && !sc_mouse_capture_is_active(&screen->mc)) {
+            sc_screen_take_device_screenshot(screen);
+        }
+        if (consumed) {
+            // The mouse capture handler consumed the event
+            return;
+        }
     }
 
     sc_input_manager_handle_event(&screen->im, event);

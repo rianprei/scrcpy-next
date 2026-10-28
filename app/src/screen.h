@@ -47,6 +47,7 @@ struct sc_screen {
     // received yet
     bool awaiting_first_frame;
     bool keyboard_grab;
+    bool otg_automatic_screenshot;
 
     struct sc_controller *controller;
 
@@ -148,6 +149,7 @@ struct sc_screen_params {
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
     bool keyboard_grab;
+    bool otg_automatic_screenshot;
 
     const char *window_title;
     bool always_on_top;
