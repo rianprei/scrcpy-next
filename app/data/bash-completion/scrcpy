@@ -8,6 +8,7 @@ _scrcpy() {
         --audio-codec=
         --audio-codec-options=
         --audio-dup
+        --audio-match-packages=
         --audio-encoder=
         --audio-source=
         --autofocus-window

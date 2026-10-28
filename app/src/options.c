@@ -140,6 +140,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .window = true,
     .mouse_hover = true,
     .audio_dup = false,
+    .audio_match_packages = NULL,
     .new_display = NULL,
     .touchscreen_id = NULL,
     .start_app = NULL,

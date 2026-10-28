@@ -409,6 +409,7 @@ struct scrcpy_options {
     bool window;
     bool mouse_hover;
     bool audio_dup;
+    const char *audio_match_packages; // comma-separated package names
     const char *new_display; // [<width>x<height>][/<dpi>] parsed by the server
     const char *touchscreen_id; // input device descriptor, parsed by the server
     const char *start_app;

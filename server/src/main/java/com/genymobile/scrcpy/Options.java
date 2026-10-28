@@ -34,6 +34,7 @@ public class Options {
     private VideoSource videoSource = VideoSource.DISPLAY;
     private AudioSource audioSource = AudioSource.OUTPUT;
     private boolean audioDup;
+    private String[] audioMatchPackages = new String[0];
     private int videoBitRate = 8000000;
     private int audioBitRate = 128000;
     private float maxFps;
@@ -140,6 +141,10 @@ public class Options {
 
     public boolean getAudioDup() {
         return audioDup;
+    }
+
+    public String[] getAudioMatchPackages() {
+        return audioMatchPackages;
     }
 
     public int getVideoBitRate() {
@@ -426,6 +431,9 @@ public class Options {
                     break;
                 case "audio_dup":
                     options.audioDup = Boolean.parseBoolean(value);
+                    break;
+                case "audio_match_packages":
+                    options.audioMatchPackages = value.split(",");
                     break;
                 case "max_size":
                     options.maxSize = Integer.parseInt(value);

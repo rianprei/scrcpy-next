@@ -65,6 +65,10 @@ Duplicate audio (capture and keep playing on the device).
 This feature is only available with --audio-source=playback.
 
 .TP
+.BI "\-\-audio\-match\-packages " pkg1[,pkg2...]
+Only capture the audio played by these apps (comma-separated package names), instead of all of them. This feature is only available with --audio-source=playback (Android 13+).
+
+.TP
 .BI "\-\-audio\-encoder " name
 Use a specific MediaCodec audio encoder (depending on the codec provided by \fB\-\-audio\-codec\fR).
 

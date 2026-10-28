@@ -309,6 +309,10 @@ execute_server(struct sc_server *server,
     if (params->audio_dup) {
         ADD_PARAM("audio_dup=true");
     }
+    if (params->audio_match_packages) {
+        VALIDATE_STRING(params->audio_match_packages);
+        ADD_PARAM("audio_match_packages=%s", params->audio_match_packages);
+    }
     if (params->max_size) {
         ADD_PARAM("max_size=%" PRIu16, params->max_size);
     }

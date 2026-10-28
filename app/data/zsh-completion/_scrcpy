@@ -15,6 +15,7 @@ arguments=(
     '--audio-codec=[Select the audio codec]:codec:(opus aac flac raw)'
     '--audio-codec-options=[Set a list of comma-separated key\:type=value options for the device audio encoder]'
     '--audio-dup=[Duplicate audio]'
+    '--audio-match-packages=[Only capture the audio of these apps \(comma-separated package names\)]'
     '--audio-encoder=[Use a specific MediaCodec audio encoder]'
     '--audio-source=[Select the audio source]:source:(output playback mic mic-unprocessed mic-camcorder mic-voice-recognition mic-voice-communication voice-call voice-call-uplink voice-call-downlink voice-performance)'
     '--autofocus-window[Raise the window and give it input focus when it is shown]'

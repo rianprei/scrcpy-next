@@ -550,6 +550,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
         .client_audio = false,
 #endif
         .audio_dup = options->audio_dup,
+        .audio_match_packages = options->audio_match_packages,
         .show_touches = options->show_touches,
         .stay_awake = options->stay_awake,
         .video_codec_options = options->video_codec_options,

@@ -7,6 +7,7 @@ import com.genymobile.scrcpy.util.Ln;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -20,12 +21,14 @@ import java.nio.ByteBuffer;
 public final class AudioPlaybackCapture implements AudioCapture {
 
     private final boolean keepPlayingOnDevice;
+    private final String[] matchPackages; // empty to capture all apps
 
     private AudioRecord recorder;
     private AudioRecordReader reader;
 
-    public AudioPlaybackCapture(boolean keepPlayingOnDevice) {
+    public AudioPlaybackCapture(boolean keepPlayingOnDevice, String[] matchPackages) {
         this.keepPlayingOnDevice = keepPlayingOnDevice;
+        this.matchPackages = matchPackages;
     }
 
     @TargetApi(AndroidVersions.API_26_ANDROID_8_0)
@@ -67,6 +70,23 @@ public final class AudioPlaybackCapture implements AudioCapture {
                 AudioAttributes attributes = new AudioAttributes.Builder().setUsage(usage).build();
                 // audioMixingRuleBuilder.addMixRule(AudioMixingRule.RULE_MATCH_ATTRIBUTE_USAGE, attributes);
                 addMixRuleMethod.invoke(audioMixingRuleBuilder, ruleMatchAttributeUsageConstant, attributes);
+            }
+
+            if (matchPackages.length > 0) {
+                // Players must also belong to one of these apps (the rules of a different type are combined with AND)
+                int ruleMatchUidConstant = audioMixingRuleClass.getField("RULE_MATCH_UID").getInt(null);
+                PackageManager pm = FakeContext.get().getPackageManager();
+                for (String packageName : matchPackages) {
+                    int uid;
+                    try {
+                        uid = pm.getPackageUid(packageName.trim(), 0);
+                    } catch (PackageManager.NameNotFoundException e) {
+                        Ln.e("Package not found: " + packageName);
+                        throw new AudioCaptureException();
+                    }
+                    // audioMixingRuleBuilder.addMixRule(AudioMixingRule.RULE_MATCH_UID, uid);
+                    addMixRuleMethod.invoke(audioMixingRuleBuilder, ruleMatchUidConstant, uid);
+                }
             }
 
             // audioMixingRuleBuilder.voiceCommunicationCaptureAllowed(true);
