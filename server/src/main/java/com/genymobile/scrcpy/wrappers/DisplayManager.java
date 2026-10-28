@@ -126,9 +126,16 @@ public final class DisplayManager {
     }
 
     public DisplayInfo getDisplayInfo(int displayId) {
+        Object displayInfo;
         try {
             Method method = getGetDisplayInfoMethod();
-            Object displayInfo = method.invoke(manager, displayId);
+            displayInfo = method.invoke(manager, displayId);
+        } catch (ReflectiveOperationException e) {
+            // Some ROMs do not expose (or forbid) DisplayManagerGlobal.getDisplayInfo()
+            Ln.w("Could not get display info by reflection (" + e + "), using \"dumpsys display\"");
+            return getDisplayInfoFromDumpsysDisplay(displayId);
+        }
+        try {
             if (displayInfo == null) {
                 // fallback when displayInfo is null
                 return getDisplayInfoFromDumpsysDisplay(displayId);
