@@ -218,6 +218,9 @@ sc_control_msg_serialize(const struct sc_control_msg *msg, uint8_t *buf) {
         case SC_CONTROL_MSG_TYPE_REQUEST_KEY_FRAME:
         case SC_CONTROL_MSG_TYPE_CAMERA_ZOOM_IN:
         case SC_CONTROL_MSG_TYPE_CAMERA_ZOOM_OUT:
+        case SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_NEARER:
+        case SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_FARTHER:
+        case SC_CONTROL_MSG_TYPE_CAMERA_AUTOFOCUS:
             // no additional data
             return 1;
         default:
@@ -361,6 +364,15 @@ sc_control_msg_log(const struct sc_control_msg *msg) {
             break;
         case SC_CONTROL_MSG_TYPE_CAMERA_ZOOM_OUT:
             LOG_CMSG("camera zoom out");
+            break;
+        case SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_NEARER:
+            LOG_CMSG("camera focus nearer");
+            break;
+        case SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_FARTHER:
+            LOG_CMSG("camera focus farther");
+            break;
+        case SC_CONTROL_MSG_TYPE_CAMERA_AUTOFOCUS:
+            LOG_CMSG("camera autofocus");
             break;
         case SC_CONTROL_MSG_TYPE_SCAN_FILE:
             LOG_CMSG("scan file \"%s\"", msg->scan_file.path);

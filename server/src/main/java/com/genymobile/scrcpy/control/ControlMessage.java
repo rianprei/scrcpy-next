@@ -32,6 +32,9 @@ public final class ControlMessage {
     public static final int TYPE_SCAN_FILE = 22;
     public static final int TYPE_REQUEST_KEY_FRAME = 23;
     public static final int TYPE_MEDIA_ACTION = 24;
+    public static final int TYPE_CAMERA_FOCUS_NEARER = 25;
+    public static final int TYPE_CAMERA_FOCUS_FARTHER = 26;
+    public static final int TYPE_CAMERA_AUTOFOCUS = 27;
 
     public static final long SEQUENCE_INVALID = 0;
 

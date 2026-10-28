@@ -511,6 +511,24 @@ static void test_serialize_camera_zoom_out(void) {
     assert(!memcmp(buf, expected, sizeof(expected)));
 }
 
+static void test_serialize_camera_focus(void) {
+    enum sc_control_msg_type types[] = {
+        SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_NEARER,
+        SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_FARTHER,
+        SC_CONTROL_MSG_TYPE_CAMERA_AUTOFOCUS,
+    };
+    for (size_t i = 0; i < ARRAY_LEN(types); ++i) {
+        struct sc_control_msg msg = {
+            .type = types[i],
+        };
+
+        uint8_t buf[SC_CONTROL_MSG_MAX_SIZE];
+        size_t size = sc_control_msg_serialize(&msg, buf);
+        assert(size == 1);
+        assert(buf[0] == 25 + i); // values of ControlMessage.java
+    }
+}
+
 static void test_serialize_resize_display(void) {
     struct sc_control_msg msg = {
         .type = SC_CONTROL_MSG_TYPE_RESIZE_DISPLAY,
@@ -602,6 +620,7 @@ int main(int argc, char *argv[]) {
     test_serialize_camera_set_torch();
     test_serialize_camera_zoom_in();
     test_serialize_camera_zoom_out();
+    test_serialize_camera_focus();
     test_serialize_resize_display();
     test_serialize_scan_file();
     test_serialize_media_action();

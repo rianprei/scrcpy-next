@@ -212,6 +212,11 @@ scrcpy --video-source=camera --camera-zoom=1.5
 It can also be adjusted dynamically using <kbd>MOD</kbd>+<kbd>↑</kbd> _(up)_ and
 <kbd>MOD</kbd>+<kbd>↓</kbd> _(down)_.
 
+The focus can be adjusted manually with <kbd>MOD</kbd>+<kbd>PgUp</kbd>
+_(nearer)_ and <kbd>MOD</kbd>+<kbd>PgDn</kbd> _(farther)_, in 20
+steps between infinity and the closest focus distance of the lens (this
+disables autofocus). <kbd>MOD</kbd>+<kbd>a</kbd> restores autofocus.
+
 
 ## Webcam
 

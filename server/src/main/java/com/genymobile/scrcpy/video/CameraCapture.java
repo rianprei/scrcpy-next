@@ -85,6 +85,8 @@ public class CameraCapture extends SurfaceCapture {
     private Size captureSize;
     private Size videoSize; // after OpenGL transforms
     private Range<Float> zoomRange;
+    private Float minFocusDistance; // in diopters, 0 or null for a fixed-focus lens
+    private float manualFocus = Float.NaN; // current manual focus distance, NaN in autofocus
 
     private AffineMatrix transform;
     private OpenGLRunner glRunner;
@@ -337,6 +339,7 @@ public class CameraCapture extends SurfaceCapture {
                 try {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
                     zoomRange = characteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+                    minFocusDistance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
                 } catch (CameraAccessException e) {
                     Ln.w("Could not get camera characteristics");
                 }
@@ -549,6 +552,7 @@ public class CameraCapture extends SurfaceCapture {
                     clamped = minFocusDistance;
                 }
                 requestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, clamped);
+                manualFocus = clamped;
                 Ln.i("Camera focus distance set to " + clamped + " diopters");
             }
         }
@@ -623,6 +627,53 @@ public class CameraCapture extends SurfaceCapture {
 
     public void zoomIn() {
         zoom(true);
+    }
+
+    private static final int FOCUS_STEPS = 20; // from infinity to the closest distance
+
+    public void adjustFocus(boolean nearer) {
+        cameraHandler.post(() -> {
+            assertCameraThread();
+            if (currentSession == null || requestBuilder == null) {
+                return;
+            }
+            if (highSpeed || minFocusDistance == null || minFocusDistance == 0) {
+                Ln.w("Manual focus is not available for this camera");
+                return;
+            }
+
+            float step = minFocusDistance / FOCUS_STEPS;
+            // Without a known manual distance (autofocus), start from infinity
+            float current = Float.isNaN(manualFocus) ? 0 : manualFocus;
+            manualFocus = Math.max(0, Math.min(minFocusDistance, current + (nearer ? step : -step)));
+
+            try {
+                Ln.i("Set camera focus distance: " + manualFocus + " diopters");
+                requestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
+                requestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, manualFocus);
+                setRepeatingRequest(currentSession, requestBuilder.build());
+            } catch (CameraAccessException e) {
+                Ln.e("Camera error", e);
+            }
+        });
+    }
+
+    public void resetAutofocus() {
+        cameraHandler.post(() -> {
+            assertCameraThread();
+            if (currentSession == null || requestBuilder == null || highSpeed) {
+                return;
+            }
+
+            try {
+                Ln.i("Set camera autofocus");
+                manualFocus = Float.NaN;
+                requestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                setRepeatingRequest(currentSession, requestBuilder.build());
+            } catch (CameraAccessException e) {
+                Ln.e("Camera error", e);
+            }
+        });
     }
 
     public void zoomOut() {

@@ -457,6 +457,20 @@ public class ControlMessageReaderTest {
     }
 
     @Test
+    public void testParseCameraFocus() throws IOException {
+        int[] types = {ControlMessage.TYPE_CAMERA_FOCUS_NEARER, ControlMessage.TYPE_CAMERA_FOCUS_FARTHER,
+                ControlMessage.TYPE_CAMERA_AUTOFOCUS};
+        for (int type : types) {
+            ByteArrayInputStream bis = new ByteArrayInputStream(new byte[] {(byte) type});
+            ControlMessageReader reader = new ControlMessageReader(bis);
+
+            ControlMessage event = reader.read();
+            Assert.assertEquals(type, event.getType());
+            Assert.assertEquals(-1, bis.read()); // EOS
+        }
+    }
+
+    @Test
     public void testParseCameraZoomOut() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos);

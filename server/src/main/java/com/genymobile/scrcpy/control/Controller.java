@@ -452,6 +452,15 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                 case ControlMessage.TYPE_CAMERA_ZOOM_OUT:
                     cameraCapture.zoomOut();
                     return true;
+                case ControlMessage.TYPE_CAMERA_FOCUS_NEARER:
+                    cameraCapture.adjustFocus(true);
+                    return true;
+                case ControlMessage.TYPE_CAMERA_FOCUS_FARTHER:
+                    cameraCapture.adjustFocus(false);
+                    return true;
+                case ControlMessage.TYPE_CAMERA_AUTOFOCUS:
+                    cameraCapture.resetAutofocus();
+                    return true;
                 default:
                     // fall through
             }

@@ -353,6 +353,19 @@ camera_zoom_in(struct sc_input_manager *im) {
 }
 
 static void
+camera_send(struct sc_input_manager *im, enum sc_control_msg_type type,
+            const char *what) {
+    assert(im->controller && im->camera);
+
+    struct sc_control_msg msg;
+    msg.type = type;
+
+    if (!sc_controller_push_msg(im->controller, &msg)) {
+        LOGW("Could not request camera %s", what);
+    }
+}
+
+static void
 camera_zoom_out(struct sc_input_manager *im) {
     assert(im->controller && im->camera);
 
@@ -920,6 +933,27 @@ sc_input_manager_process_key(struct sc_input_manager *im,
                     if (!shift && down && !paused) {
                         // forward repeated events
                         camera_zoom_in(im);
+                    }
+                    return;
+                case SDLK_PAGEUP:
+                    if (!shift && down && !paused) {
+                        // forward repeated events
+                        camera_send(im, SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_NEARER,
+                                    "focus nearer");
+                    }
+                    return;
+                case SDLK_PAGEDOWN:
+                    if (!shift && down && !paused) {
+                        // forward repeated events
+                        camera_send(im,
+                                    SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_FARTHER,
+                                    "focus farther");
+                    }
+                    return;
+                case SDLK_A:
+                    if (!shift && !repeat && down && !paused) {
+                        camera_send(im, SC_CONTROL_MSG_TYPE_CAMERA_AUTOFOCUS,
+                                    "autofocus");
                     }
                     return;
             }
