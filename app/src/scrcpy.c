@@ -723,6 +723,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
             .on_ended = sc_recorder_on_ended,
         };
         if (!sc_recorder_init(&s->recorder, options->record_filename,
+                              options->record_pts_filename,
                               options->record_format, options->video,
                               options->audio, options->record_orientation,
                               &recorder_cbs, NULL)) {

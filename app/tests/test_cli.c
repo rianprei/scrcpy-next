@@ -59,6 +59,7 @@ static void test_options(void) {
         "--port", "1234:1236",
         "--push-target", "/sdcard/Movies",
         "--record", "file",
+        "--record-pts", "file.pts.csv",
         "--record-format", "mkv",
         "--serial", "0123456789abcdef",
         "--show-touches",
@@ -87,6 +88,7 @@ static void test_options(void) {
     assert(opts->port_range.last == 1236);
     assert(!strcmp(opts->push_target, "/sdcard/Movies"));
     assert(!strcmp(opts->record_filename, "file"));
+    assert(!strcmp(opts->record_pts_filename, "file.pts.csv"));
     assert(opts->record_format == SC_RECORD_FORMAT_MKV);
     assert(!strcmp(opts->serial, "0123456789abcdef"));
     assert(opts->show_touches);

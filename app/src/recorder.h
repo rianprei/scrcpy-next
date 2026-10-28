@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <libavcodec/packet.h>
 #include <libavformat/avformat.h>
 
@@ -38,6 +39,9 @@ struct sc_recorder {
     enum sc_orientation orientation;
 
     char *filename;
+    char *pts_filename;
+    FILE *pts_file;
+    uint64_t pts_frame_index;
     enum sc_record_format format;
     AVFormatContext *ctx;
 
@@ -70,7 +74,8 @@ struct sc_recorder_callbacks {
 
 bool
 sc_recorder_init(struct sc_recorder *recorder, const char *filename,
-                 enum sc_record_format format, bool video, bool audio,
+                 const char *pts_filename, enum sc_record_format format,
+                 bool video, bool audio,
                  enum sc_orientation orientation,
                  const struct sc_recorder_callbacks *cbs, void *cbs_userdata);
 

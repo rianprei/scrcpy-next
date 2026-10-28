@@ -94,6 +94,7 @@ _scrcpy() {
         -r --record=
         --raw-key-events
         --record-format=
+        --record-pts=
         --record-orientation=
         --render-driver=
         --render-fit=
@@ -186,7 +187,7 @@ _scrcpy() {
             COMPREPLY=($(compgen -W 'true false if-error' -- "$cur"))
             return
             ;;
-        --config-file|--keymap|-r|--record)
+        --config-file|--keymap|-r|--record|--record-pts)
             COMPREPLY=($(compgen -f -- "$cur"))
             return
             ;;
