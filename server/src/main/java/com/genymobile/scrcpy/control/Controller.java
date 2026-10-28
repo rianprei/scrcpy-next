@@ -84,6 +84,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private Thread keepActiveThread;
 
     private UhidManager uhidManager;
+    private MediaManager mediaManager;
 
     private final boolean camera;
     private final int displayId;
@@ -137,6 +138,9 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         this.keepActive = options.getKeepActive();
         initPointers();
         sender = new DeviceMessageSender(controlChannel);
+        if (options.getMediaControl()) {
+            mediaManager = new MediaManager(sender);
+        }
 
         supportsInputEvents = Device.supportsInputEvents(displayId);
         if (!supportsInputEvents) {
@@ -305,6 +309,9 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         if (thread != null) {
             thread.interrupt();
         }
+        if (mediaManager != null) {
+            mediaManager.stop();
+        }
         if (sender != null) {
             sender.stop();
         }
@@ -414,6 +421,11 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                     return true;
                 case ControlMessage.TYPE_START_APP:
                     startAppAsync(msg.getText());
+                    return true;
+                case ControlMessage.TYPE_MEDIA_ACTION:
+                    if (mediaManager != null) {
+                        mediaManager.handleAction(msg.getAction(), msg.getMediaPosition());
+                    }
                     return true;
                 case ControlMessage.TYPE_RESIZE_DISPLAY:
                     resizeDisplay(msg.getWidth(), msg.getHeight());

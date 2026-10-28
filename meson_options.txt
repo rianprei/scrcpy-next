@@ -10,3 +10,4 @@ option('vaapi', type: 'boolean', value: true, description: 'Enable VA-API hardwa
 option('d3d11va', type: 'boolean', value: true, description: 'Enable D3D11VA hardware decoding (Windows)')
 option('videotoolbox', type: 'boolean', value: true, description: 'Enable VideoToolbox hardware decoding (macOS)')
 option('client_audio', type: 'boolean', value: true, description: 'Enable client audio forwarding (requires libavdevice)')
+option('mpris', type: 'boolean', value: true, description: 'Enable DBus MPRIS when supported')
