@@ -223,6 +223,8 @@ set_device_clipboard(struct sc_input_manager *im, bool paste,
     msg.type = SC_CONTROL_MSG_TYPE_SET_CLIPBOARD;
     msg.set_clipboard.sequence = sequence;
     msg.set_clipboard.text = text_dup;
+    // The content is only logged on explicit request (-Vverbose)
+    LOGV("Computer clipboard content: \"%s\"", text_dup);
     msg.set_clipboard.paste = paste;
 
     if (!sc_controller_push_msg(im->controller, &msg)) {

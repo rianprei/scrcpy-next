@@ -58,6 +58,8 @@ task_set_clipboard(void *userdata) {
         bool ok = SDL_SetClipboardText(text);
         if (ok) {
             LOGI("Device clipboard copied");
+            // The content is only logged on explicit request (-Vverbose)
+            LOGV("Device clipboard content: \"%s\"", text);
         } else {
             LOGE("Could not set clipboard: %s", SDL_GetError());
         }
