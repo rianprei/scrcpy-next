@@ -9,6 +9,9 @@
 #include "latency_stats.h"
 #include "options.h"
 #include "util/log.h"
+#ifdef _WIN32
+# include "sys/win/darkmode.h"
+#endif
 #include "util/sdl.h"
 
 #define DISPLAY_MARGINS 96
@@ -638,6 +641,9 @@ sc_screen_init(struct sc_screen *screen,
             LOGE("Could not create window: %s", SDL_GetError());
             goto error_destroy_fps_counter;
         }
+#ifdef _WIN32
+        sc_darkmode_apply_to_window(screen->window);
+#endif
     }
 
     screen->renderer = SDL_CreateRenderer(screen->window, NULL);
