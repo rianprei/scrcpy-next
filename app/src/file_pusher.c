@@ -175,7 +175,7 @@ run_file_pusher(void *data) {
             LOGI("Pushing %s...", req.file);
             // Make sure that the target directory exists (adb push does not
             // create it)
-            bool ok = sc_adb_shell_mkdir(intr, serial, IMAGE_PUSH_TARGET);
+            bool ok = sc_adb_shell_mkdir(intr, serial, IMAGE_PUSH_TARGET, 0);
             if (ok) {
                 ok = sc_adb_push(intr, serial, req.file, IMAGE_PUSH_TARGET, 0);
                 if (ok) {
