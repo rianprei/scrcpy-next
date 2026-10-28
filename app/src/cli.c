@@ -1374,8 +1374,16 @@ static const struct sc_shortcut shortcuts[] = {
         .text = "Expand notification panel",
     },
     {
+        .shortcuts = { "MOD+e" },
+        .text = "Expand settings panel (directly)",
+    },
+    {
         .shortcuts = { "MOD+Shift+n" },
         .text = "Collapse notification panel",
+    },
+    {
+        .shortcuts = { "MOD+j" },
+        .text = "Enable/disable the keymap (--keymap)",
     },
     {
         .shortcuts = { "MOD+c" },

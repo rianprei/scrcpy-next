@@ -55,6 +55,7 @@ struct sc_input_manager {
     // --keymap: keys mapped to touches on the device screen
     const struct sc_keymap *keymap; // NULL if disabled
     uint32_t keymap_down; // bit i is set while entry i touches the screen
+    bool keymap_enabled; // toggled by MOD+j
 
     uint8_t mouse_buttons_state; // OR of enum sc_mouse_button values
 

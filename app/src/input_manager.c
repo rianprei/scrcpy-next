@@ -56,6 +56,7 @@ sc_input_manager_init(struct sc_input_manager *im,
     static_assert(SC_KEYMAP_MAX_ENTRIES <= 32, "keymap_down is 32 bits");
     im->keymap = params->keymap;
     im->keymap_down = 0;
+    im->keymap_enabled = true;
 
     im->mouse_buttons_state = 0;
 
@@ -439,6 +440,20 @@ process_keymap_key(struct sc_input_manager *im, int i, bool down) {
     if (inject_finger(im, action, point, SC_POINTER_ID_KEYMAP_BASE + i)) {
         im->keymap_down ^= bit;
     }
+}
+
+static void
+toggle_keymap(struct sc_input_manager *im) {
+    im->keymap_enabled = !im->keymap_enabled;
+    if (!im->keymap_enabled) {
+        // Release all the touches of the keys still pressed
+        for (unsigned i = 0; i < im->keymap->count; ++i) {
+            if (im->keymap_down & (UINT32_C(1) << i)) {
+                process_keymap_key(im, i, false);
+            }
+        }
+    }
+    LOGI("Keymap %s", im->keymap_enabled ? "enabled" : "disabled");
 }
 
 static bool
@@ -828,6 +843,11 @@ sc_input_manager_process_key(struct sc_input_manager *im,
                         }
                     }
                     return;
+                case SDLK_J:
+                    if (im->keymap && !repeat && down) {
+                        toggle_keymap(im);
+                    }
+                    return;
                 case SDLK_E:
                     // Expand the settings panel directly (e.g. the control
                     // center on devices with split panels), without expanding
@@ -889,7 +909,10 @@ sc_input_manager_process_key(struct sc_input_manager *im,
 
     if (im->keymap && control && !disconnected) {
         int i = sc_keymap_find(im->keymap, sdl_keycode);
-        if (i != -1) {
+        // When disabled, mapped keys are forwarded as normal keys, but a key
+        // still touching the screen must be released
+        bool touching = i != -1 && (im->keymap_down & (UINT32_C(1) << i));
+        if (i != -1 && (im->keymap_enabled || touching)) {
             // A release is always processed, so that no touch stays down
             if (!repeat && (!down || (video && !paused))) {
                 process_keymap_key(im, i, down);
