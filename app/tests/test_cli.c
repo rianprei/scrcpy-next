@@ -127,6 +127,24 @@ static void test_options2(void) {
     assert(opts->record_format == SC_RECORD_FORMAT_MP4);
 }
 
+static void test_camera_focus(void) {
+    struct scrcpy_cli_args args = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv[] = {"scrcpy", "--video-source=camera", "--camera-focus-distance=5",
+                    "--no-camera-autofocus"};
+    assert(scrcpy_parse_args(&args, ARRAY_LEN(argv), argv));
+    assert(!strcmp(args.opts.camera_focus_distance, "5"));
+    assert(args.opts.camera_no_autofocus);
+
+    // camera options are rejected for the display source
+    struct scrcpy_cli_args args2 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv2[] = {"scrcpy", "--no-camera-autofocus"};
+    assert(!scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
+}
+
 static void test_parse_shortcut_mods(void) {
     uint8_t mods;
     bool ok;
@@ -210,6 +228,7 @@ int main(int argc, char *argv[]) {
     test_flag_help();
     test_options();
     test_options2();
+    test_camera_focus();
     test_parse_shortcut_mods();
     test_preparse();
     test_profile();
