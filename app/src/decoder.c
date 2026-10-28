@@ -104,7 +104,15 @@ sc_decoder_open(struct sc_decoder *decoder, const AVCodecParameters *params,
 
     const AVCodec *codec = NULL;
 
-    if (decoder->hwdec && decoder->hwdec->hw_type != AV_HWDEVICE_TYPE_NONE) {
+    if (decoder->codec_name) {
+        codec = avcodec_find_decoder_by_name(decoder->codec_name);
+        if (!codec || codec->id != params->codec_id) {
+            LOGE("Decoder '%s': '%s' is not a %s decoder", decoder->name,
+                 decoder->codec_name, avcodec_get_name(params->codec_id));
+            return false;
+        }
+    } else if (decoder->hwdec
+            && decoder->hwdec->hw_type != AV_HWDEVICE_TYPE_NONE) {
         // The default decoder may not support hardware decoding (for example,
         // libdav1d is preferred for AV1, but only the native av1 decoder
         // supports the hardware devices)
@@ -494,7 +502,7 @@ sc_decoder_packet_sink_push_session(struct sc_packet_sink *sink,
 
 bool
 sc_decoder_init(struct sc_decoder *decoder, const char *name,
-                struct sc_hwdec *hwdec, bool copy_opaque,
+                struct sc_hwdec *hwdec, const char *codec_name, bool copy_opaque,
                 const struct sc_decoder_callbacks *cbs, void *cbs_userdata) {
     bool ok = sc_mutex_init(&decoder->mutex);
     if (!ok) {
@@ -511,6 +519,7 @@ sc_decoder_init(struct sc_decoder *decoder, const char *name,
     sc_frame_source_init(&decoder->frame_source);
 
     decoder->hwdec = hwdec;
+    decoder->codec_name = codec_name;
     decoder->copy_opaque = copy_opaque;
 
     sc_vecdeque_init(&decoder->queue);

@@ -44,6 +44,7 @@ enum {
     OPT_CLIENT_AUDIO_SOURCE,
     OPT_TRACKPAD,
     OPT_VIDEO_ENCODER,
+    OPT_VIDEO_DECODER,
     OPT_POWER_OFF_ON_CLOSE,
     OPT_V4L2_SINK,
     OPT_VIDEO_BUFFER,
@@ -1134,6 +1135,15 @@ static const struct sc_option options[] = {
                 "The list of possible codec options is available in the "
                 "Android documentation: "
                 "<https://d.android.com/reference/android/media/MediaFormat>",
+    },
+    {
+        .longopt_id = OPT_VIDEO_DECODER,
+        .longopt = "video-decoder",
+        .argdesc = "name",
+        .text = "Use a specific FFmpeg video decoder on the computer (for "
+                "example \"libdav1d\" or \"h264_cuvid\"). It must decode "
+                "the codec provided by --video-codec.\n"
+                "The available decoders can be listed by \"ffmpeg -decoders\".",
     },
     {
         .longopt_id = OPT_VIDEO_ENCODER,
@@ -2948,6 +2958,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
 #endif
             case OPT_VIDEO_ENCODER:
                 opts->video_encoder = optarg;
+                break;
+            case OPT_VIDEO_DECODER:
+                opts->video_decoder = optarg;
                 break;
             case OPT_AUDIO_ENCODER:
                 opts->audio_encoder = optarg;

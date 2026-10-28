@@ -970,7 +970,8 @@ aoa_complete:
         // If a video buffer is present, then the recv date must be forwarded
         // from the AVPacket to the AVFrame
         bool copy_opaque = has_video_buffer;
-        if (!sc_decoder_init(&s->video_decoder, "video", &s->hwdec, copy_opaque,
+        if (!sc_decoder_init(&s->video_decoder, "video", &s->hwdec,
+                             options->video_decoder, copy_opaque,
                              &decoder_cbs, NULL)) {
             goto end;
         }
@@ -986,7 +987,7 @@ aoa_complete:
     }
 
     if (needs_audio_decoder) {
-        if (!sc_decoder_init(&s->audio_decoder, "audio", NULL, false,
+        if (!sc_decoder_init(&s->audio_decoder, "audio", NULL, NULL, false,
                              &decoder_cbs, NULL)) {
             goto end;
         }

@@ -273,6 +273,7 @@ struct scrcpy_options {
     const char *video_codec_options;
     const char *audio_codec_options;
     const char *video_encoder;
+    const char *video_decoder; // FFmpeg decoder name, on the client
     const char *audio_encoder;
     const char *camera_id;
     const char *camera_size;

@@ -134,6 +134,13 @@ static void test_mouse_bind_info(void) {
     char *argv[] = {"scrcpy", "--mouse-bind=bhsi"};
     assert(scrcpy_parse_args(&args, ARRAY_LEN(argv), argv));
     assert(args.opts.mouse_bindings.pri.click5 == SC_MOUSE_BINDING_INFO);
+
+    struct scrcpy_cli_args args2 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv2[] = {"scrcpy", "--video-decoder=libdav1d"};
+    assert(scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
+    assert(!strcmp(args2.opts.video_decoder, "libdav1d"));
 }
 
 static void test_camera_focus(void) {

@@ -35,6 +35,7 @@ struct sc_decoder {
     bool copy_opaque;
 
     struct sc_hwdec *hwdec; // optional, only for video
+    const char *codec_name; // optional FFmpeg decoder name forced by the user
 
     sc_thread thread;
     sc_mutex mutex;
@@ -70,7 +71,7 @@ struct sc_decoder_callbacks {
 //        outlive the decoder)
 bool
 sc_decoder_init(struct sc_decoder *decoder, const char *name,
-                struct sc_hwdec *hwdec, bool copy_opaque,
+                struct sc_hwdec *hwdec, const char *codec_name, bool copy_opaque,
                 const struct sc_decoder_callbacks *cbs, void *cbs_userdata);
 
 bool

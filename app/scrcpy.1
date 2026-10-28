@@ -744,6 +744,12 @@ The list of possible codec options is available in the Android documentation:
 <https://d.android.com/reference/android/media/MediaFormat>
 
 .TP
+.BI "\-\-video\-decoder " name
+Use a specific FFmpeg video decoder on the computer (for example "libdav1d" or "h264_cuvid"). It must decode the codec provided by \fB\-\-video\-codec\fR.
+
+The available decoders can be listed by "ffmpeg \-decoders".
+
+.TP
 .BI "\-\-video\-encoder " name
 Use a specific MediaCodec video encoder (depending on the codec provided by \fB\-\-video\-codec\fR).
 
