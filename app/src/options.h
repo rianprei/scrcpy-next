@@ -320,6 +320,7 @@ struct scrcpy_options {
     sc_tick audio_output_buffer;
     sc_tick time_limit;
     sc_tick screen_off_timeout;
+    sc_tick disconnect_timeout;
 #ifdef HAVE_V4L2
     const char *v4l2_device;
     sc_tick v4l2_buffer;
@@ -360,6 +361,7 @@ struct scrcpy_options {
     bool start_fps_counter;
     bool latency_stats;
     bool power_on;
+    bool server_push;
     bool video;
     bool audio;
     const char *client_audio_source;

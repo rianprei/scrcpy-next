@@ -141,6 +141,15 @@ static void test_mouse_bind_info(void) {
     char *argv2[] = {"scrcpy", "--video-decoder=libdav1d"};
     assert(scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
     assert(!strcmp(args2.opts.video_decoder, "libdav1d"));
+
+    struct scrcpy_cli_args args3 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv3[] = {"scrcpy", "--disconnect-timeout=10", "--no-server-push"};
+    assert(scrcpy_parse_args(&args3, ARRAY_LEN(argv3), argv3));
+    assert(args3.opts.disconnect_timeout == SC_TICK_FROM_SEC(10));
+    assert(!args3.opts.server_push);
+    assert(scrcpy_options_default.server_push);
 }
 
 static void test_camera_focus(void) {

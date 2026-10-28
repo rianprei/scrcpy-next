@@ -38,6 +38,7 @@ enum {
     OPT_VIDEO_CODEC_OPTIONS,
     OPT_FORCE_ADB_FORWARD,
     OPT_DISABLE_SCREENSAVER,
+    OPT_DISCONNECT_TIMEOUT,
     OPT_SHORTCUT_MOD,
     OPT_NO_KEY_REPEAT,
     OPT_LEGACY_PASTE,
@@ -62,6 +63,7 @@ enum {
     OPT_PRINT_FPS,
     OPT_LATENCY_STATS,
     OPT_NO_POWER_ON,
+    OPT_NO_SERVER_PUSH,
     OPT_VIDEO_CODEC,
     OPT_NO_AUDIO,
     OPT_AUDIO_BIT_RATE,
@@ -401,6 +403,14 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_DISABLE_SCREENSAVER,
         .longopt = "disable-screensaver",
         .text = "Disable screensaver while scrcpy is running.",
+    },
+    {
+        .longopt_id = OPT_DISCONNECT_TIMEOUT,
+        .longopt = "disconnect-timeout",
+        .argdesc = "seconds",
+        .text = "Set how long the window stays open (showing the "
+                "disconnection icon) after the device is disconnected.\n"
+                "Default is 2.",
     },
     {
         .longopt_id = OPT_DISPLAY_ID,
@@ -777,6 +787,13 @@ static const struct sc_option options[] = {
         .longopt_id = OPT_NO_POWER_ON,
         .longopt = "no-power-on",
         .text = "Do not power on the device on start.",
+    },
+    {
+        .longopt_id = OPT_NO_SERVER_PUSH,
+        .longopt = "no-server-push",
+        .text = "Do not push the server to the device: use the one already "
+                "pushed by a previous run (it must be the same version), to "
+                "start faster over a slow connection.",
     },
     {
         .longopt_id = OPT_NO_TERMINAL_TITLE,
@@ -2498,6 +2515,19 @@ parse_time_limit(const char *s, sc_tick *tick) {
 }
 
 static bool
+parse_disconnect_timeout(const char *s, sc_tick *tick) {
+    long value;
+    bool ok = parse_integer_arg(s, &value, false, 0, 3600,
+                                "disconnect timeout");
+    if (!ok) {
+        return false;
+    }
+
+    *tick = SC_TICK_FROM_SEC(value);
+    return true;
+}
+
+static bool
 parse_screen_off_timeout(const char *s, sc_tick *tick) {
     long value;
     // value in seconds, but must fit in 31 bits in milliseconds
@@ -2986,6 +3016,12 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_DISABLE_SCREENSAVER:
                 opts->disable_screensaver = true;
                 break;
+            case OPT_DISCONNECT_TIMEOUT:
+                if (!parse_disconnect_timeout(optarg,
+                                              &opts->disconnect_timeout)) {
+                    return false;
+                }
+                break;
             case OPT_SHORTCUT_MOD:
                 if (!parse_shortcut_mods(optarg, &opts->shortcut_mods)) {
                     return false;
@@ -3038,6 +3074,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 break;
             case OPT_NO_POWER_ON:
                 opts->power_on = false;
+                break;
+            case OPT_NO_SERVER_PUSH:
+                opts->server_push = false;
                 break;
             case OPT_PRINT_FPS:
                 opts->start_fps_counter = true;

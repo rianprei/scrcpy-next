@@ -72,6 +72,7 @@ struct sc_server_params {
     bool select_tcpip;
     bool cleanup;
     bool power_on;
+    bool server_push;
     bool latency_stats;
     bool kill_adb_on_close;
     bool camera_high_speed;

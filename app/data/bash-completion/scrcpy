@@ -28,6 +28,7 @@ _scrcpy() {
         --crop=
         -d --select-usb
         --disable-screensaver
+        --disconnect-timeout=
         --display-id=
         --display-ime-policy=
         --display-orientation=
@@ -72,6 +73,7 @@ _scrcpy() {
         --no-mipmaps
         --no-mouse-hover
         --no-power-on
+        --no-server-push
         --no-terminal-title
         --no-vd-destroy-content
         --no-vd-system-decorations

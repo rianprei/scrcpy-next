@@ -1113,9 +1113,14 @@ run_server(void *data) {
     assert(serial);
     LOGD("Device serial: %s", serial);
 
-    ok = push_server(&server->intr, serial);
-    if (!ok) {
-        goto error_connection_failed;
+    if (server->params.server_push) {
+        ok = push_server(&server->intr, serial);
+        if (!ok) {
+            goto error_connection_failed;
+        }
+    } else {
+        // A version mismatch is detected by the server on start
+        LOGI("Server not pushed, using " SC_DEVICE_SERVER_PATH);
     }
 
     // If --list-* is passed, then the server just prints the requested data
