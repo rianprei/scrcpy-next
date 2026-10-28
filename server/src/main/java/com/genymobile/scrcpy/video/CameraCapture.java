@@ -135,10 +135,10 @@ public class CameraCapture extends SurfaceCapture {
 
             Ln.i("Using camera '" + cameraId + "'");
             int attempts = 1;
-            if (Build.VERSION.SDK_INT <= AndroidVersions.API_30_ANDROID_11) {
-                // On Android 10 and 11, the camera service only serves clients it considers
-                // foreground; an invisible overlay window makes the shell process count as one on
-                // many (not all) ROMs. The camera may take a few tries while the window settles.
+            if (Build.VERSION.SDK_INT == AndroidVersions.API_30_ANDROID_11) {
+                // On Android 11, the camera service only serves clients it considers foreground;
+                // an invisible overlay window makes the shell process count as one on many (not
+                // all) ROMs. The camera may take a few tries to open while the window settles.
                 prepareOverlayWindow();
                 attempts = 4;
             }
