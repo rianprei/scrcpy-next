@@ -103,6 +103,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .disconnect_timeout = SC_TICK_FROM_SEC(2),
     .forward_key_repeat = true,
     .legacy_paste = false,
+    .text_via_clipboard = false,
     .trackpad = false,
     .keymap = NULL,
     .power_off_on_close = false,

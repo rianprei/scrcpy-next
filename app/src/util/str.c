@@ -170,6 +170,16 @@ sc_str_list_contains(const char *list, char sep, const char *s) {
     return false;
 }
 
+bool
+sc_str_is_ascii(const char *s) {
+    for (; *s; ++s) {
+        if ((unsigned char) *s & 0x80) {
+            return false;
+        }
+    }
+    return true;
+}
+
 size_t
 sc_str_utf8_truncation_index(const char *utf8, size_t max_len) {
     size_t len = strlen(utf8);

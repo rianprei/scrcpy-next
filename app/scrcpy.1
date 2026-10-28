@@ -694,6 +694,12 @@ If no destination address is provided, then scrcpy attempts to find the IP addre
 Prefix the address with a '+' to force a reconnection.
 
 .TP
+.B \-\-text\-via\-clipboard
+Inject typed text containing non-ASCII characters (for example Farsi, Arabic or CJK) by setting the device clipboard and pasting it, because key events cannot represent them. The device clipboard is overwritten.
+
+Only for \fB\-\-keyboard=sdk\fR.
+
+.TP
 .BI "\-\-time\-limit " seconds
 Set the maximum mirroring time, in seconds.
 

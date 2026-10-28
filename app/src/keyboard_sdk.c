@@ -11,8 +11,10 @@
 #include "control_msg.h"
 #include "controller.h"
 #include "input_events.h"
+#include "util/acksync.h"
 #include "util/intmap.h"
 #include "util/log.h"
+#include "util/str.h"
 
 /** Downcast key processor to sc_keyboard_sdk */
 #define DOWNCAST(KP) container_of(KP, struct sc_keyboard_sdk, key_processor)
@@ -316,15 +318,26 @@ sc_key_processor_process_text(struct sc_key_processor *kp,
         }
     }
 
-    struct sc_control_msg msg;
-    msg.type = SC_CONTROL_MSG_TYPE_INJECT_TEXT;
-    msg.inject_text.text = strdup(event->text);
-    if (!msg.inject_text.text) {
+    char *text = strdup(event->text);
+    if (!text) {
         LOGW("Could not strdup input text");
         return;
     }
+
+    struct sc_control_msg msg;
+    if (kb->text_via_clipboard && !sc_str_is_ascii(text)) {
+        // The device cannot generate key events for most non-ASCII
+        // characters: paste them instead
+        msg.type = SC_CONTROL_MSG_TYPE_SET_CLIPBOARD;
+        msg.set_clipboard.sequence = SC_SEQUENCE_INVALID;
+        msg.set_clipboard.text = text;
+        msg.set_clipboard.paste = true;
+    } else {
+        msg.type = SC_CONTROL_MSG_TYPE_INJECT_TEXT;
+        msg.inject_text.text = text;
+    }
     if (!sc_controller_push_msg(kb->controller, &msg)) {
-        free(msg.inject_text.text);
+        free(text);
         LOGW("Could not request 'inject text'");
     }
 }
@@ -333,10 +346,11 @@ void
 sc_keyboard_sdk_init(struct sc_keyboard_sdk *kb,
                      struct sc_controller *controller,
                      enum sc_key_inject_mode key_inject_mode,
-                     bool forward_key_repeat) {
+                     bool forward_key_repeat, bool text_via_clipboard) {
     kb->controller = controller;
     kb->key_inject_mode = key_inject_mode;
     kb->forward_key_repeat = forward_key_repeat;
+    kb->text_via_clipboard = text_via_clipboard;
 
     kb->repeat = 0;
 

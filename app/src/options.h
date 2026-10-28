@@ -350,6 +350,7 @@ struct scrcpy_options {
     bool disable_screensaver;
     bool forward_key_repeat;
     bool legacy_paste;
+    bool text_via_clipboard;
     bool trackpad;
     const char *keymap; // path of a keymap file (see keymap.h)
     bool power_off_on_close;

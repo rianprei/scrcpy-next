@@ -78,6 +78,12 @@ bool
 sc_str_list_contains(const char *list, char sep, const char *s);
 
 /**
+ * Return true if the string contains only ASCII characters
+ */
+bool
+sc_str_is_ascii(const char *s);
+
+/**
  * Return the index to truncate a UTF-8 string at a valid position
  */
 size_t

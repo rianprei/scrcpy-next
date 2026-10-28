@@ -362,6 +362,13 @@ static void test_index_of_column(void) {
     assert(sc_str_index_of_column("  a bc  d", 1, " ") == 2);
 }
 
+static void test_is_ascii(void) {
+    assert(sc_str_is_ascii(""));
+    assert(sc_str_is_ascii("hello, world! ~"));
+    assert(!sc_str_is_ascii("caf\xc3\xa9"));                 // é
+    assert(!sc_str_is_ascii("\xd8\xb3\xd9\x84\xd8\xa7\xd9\x85")); // سلام
+}
+
 static void test_remove_trailing_cr(void) {
     char s[] = "abc\r";
     sc_str_remove_trailing_cr(s, sizeof(s) - 1);
@@ -397,5 +404,6 @@ int main(int argc, char *argv[]) {
     test_wrap_lines();
     test_index_of_column();
     test_remove_trailing_cr();
+    test_is_ascii();
     return 0;
 }

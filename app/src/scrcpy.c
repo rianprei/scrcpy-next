@@ -892,7 +892,8 @@ aoa_complete:
         if (options->keyboard_input_mode == SC_KEYBOARD_INPUT_MODE_SDK) {
             sc_keyboard_sdk_init(&s->keyboard_sdk, &s->controller,
                                  options->key_inject_mode,
-                                 options->forward_key_repeat);
+                                 options->forward_key_repeat,
+                                 options->text_via_clipboard);
             kp = &s->keyboard_sdk.key_processor;
         } else if (options->keyboard_input_mode
                 == SC_KEYBOARD_INPUT_MODE_UHID) {

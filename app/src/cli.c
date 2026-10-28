@@ -43,6 +43,7 @@ enum {
     OPT_SHORTCUT_MOD,
     OPT_NO_KEY_REPEAT,
     OPT_LEGACY_PASTE,
+    OPT_TEXT_VIA_CLIPBOARD,
     OPT_CLIENT_AUDIO_SOURCE,
     OPT_TRACKPAD,
     OPT_KEYMAP,
@@ -1077,6 +1078,15 @@ static const struct sc_option options[] = {
                 "connected over USB), enables TCP/IP mode, then connects to "
                 "this address before starting.\n"
                 "Prefix the address with a '+' to force a reconnection.",
+    },
+    {
+        .longopt_id = OPT_TEXT_VIA_CLIPBOARD,
+        .longopt = "text-via-clipboard",
+        .text = "Inject typed text containing non-ASCII characters (for "
+                "example Farsi, Arabic or CJK) by setting the device "
+                "clipboard and pasting it, because key events cannot "
+                "represent them. The device clipboard is overwritten.\n"
+                "Only for --keyboard=sdk.",
     },
     {
         .longopt_id = OPT_TIME_LIMIT,
@@ -3054,6 +3064,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                 if (!parse_shortcut_mods(optarg, &opts->shortcut_mods)) {
                     return false;
                 }
+                break;
+            case OPT_TEXT_VIA_CLIPBOARD:
+                opts->text_via_clipboard = true;
                 break;
             case OPT_LEGACY_PASTE:
                 opts->legacy_paste = true;

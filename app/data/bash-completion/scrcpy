@@ -107,6 +107,7 @@ _scrcpy() {
         -t --show-touches
         --tcpip
         --tcpip=
+        --text-via-clipboard
         --time-limit=
         --touchscreen-id=
         --trackpad
