@@ -646,6 +646,12 @@ Set the maximum mirroring time, in seconds.
 Associate a touchscreen connected to the device (identified by its input device descriptor, see "adb shell dumpsys input") with the display mirrored by scrcpy, so that its touches are routed to that display (typically a display created by \fB\-\-new\-display\fR).
 
 .TP
+.B \-\-trackpad
+Turn two-finger gestures on the computer trackpad into two touch pointers on the device, anchored at the mouse cursor: pinch to zoom, rotate, and two-finger slides in any direction.
+
+Only available with \fB\-\-mouse=sdk\fR (the default). Mouse wheel events are ignored while a two-finger gesture is active.
+
+.TP
 .BI "\-\-tunnel\-host " ip
 Set the IP address of the adb tunnel to reach the scrcpy server. This option automatically enables \fB\-\-force\-adb\-forward\fR.
 

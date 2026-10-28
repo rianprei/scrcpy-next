@@ -100,6 +100,7 @@ _scrcpy() {
         --tcpip=
         --time-limit=
         --touchscreen-id=
+        --trackpad
         --tunnel-host=
         --tunnel-port=
         --v4l2-buffer=
