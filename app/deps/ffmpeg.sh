@@ -51,9 +51,7 @@ else
         --extra-cflags="-O2 -fPIC"
         --disable-programs
         --disable-doc
-        --disable-swscale
         --disable-avfilter
-        --disable-network
         --disable-everything
         --disable-vulkan
         --disable-vdpau
@@ -71,6 +69,15 @@ else
         --enable-decoder=flac
         --enable-decoder=png
         --enable-protocol=file
+        # --stream-sink (srt:// needs libsrt, not built here)
+        --enable-network
+        --enable-protocol=tcp
+        --enable-protocol=udp
+        --enable-protocol=rtp
+        --enable-muxer=mpegts
+        # screenshots (MOD+Shift+s)
+        --enable-swscale
+        --enable-encoder=png
         --enable-demuxer=image2
         --enable-parser=png
         --enable-zlib
