@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libavcodec/avcodec.h>
@@ -129,7 +130,10 @@ static bool
 sc_recorder_open_output_file(struct sc_recorder *recorder) {
     const char *format_name = sc_recorder_get_format_name(recorder->format);
     assert(format_name);
-    const AVOutputFormat *format = find_muxer(format_name);
+    // With --record-segment, the "segment" muxer opens the files itself and
+    // writes each one with the muxer of the record format
+    const AVOutputFormat *format =
+        find_muxer(recorder->segment_seconds ? "segment" : format_name);
     if (!format) {
         LOGE("Could not find muxer");
         return false;
@@ -139,6 +143,21 @@ sc_recorder_open_output_file(struct sc_recorder *recorder) {
     if (!recorder->ctx) {
         LOG_OOM();
         return false;
+    }
+
+    if (recorder->segment_seconds) {
+        recorder->ctx->oformat = format;
+        recorder->ctx->url = av_strdup(recorder->filename);
+        if (!recorder->ctx->url) {
+            avformat_free_context(recorder->ctx);
+            LOG_OOM();
+            return false;
+        }
+        av_dict_set(&recorder->ctx->metadata, "comment",
+                    "Recorded by scrcpy " SCRCPY_VERSION, 0);
+        LOGI("Recording started to %s files of %" PRIu32 " s: %s",
+             format_name, recorder->segment_seconds, recorder->filename);
+        return true;
     }
 
     char *file_url = sc_str_concat("file:", recorder->filename);
@@ -166,7 +185,9 @@ sc_recorder_open_output_file(struct sc_recorder *recorder) {
 
 static void
 sc_recorder_close_output_file(struct sc_recorder *recorder) {
-    avio_close(recorder->ctx->pb);
+    if (!(recorder->ctx->oformat->flags & AVFMT_NOFILE)) {
+        avio_close(recorder->ctx->pb);
+    }
     avformat_free_context(recorder->ctx);
 }
 
@@ -256,7 +277,20 @@ sc_recorder_process_header(struct sc_recorder *recorder) {
         }
     }
 
-    bool ok = avformat_write_header(recorder->ctx, NULL) >= 0;
+    AVDictionary *muxer_options = NULL;
+    if (recorder->segment_seconds) {
+        char seconds[16];
+        snprintf(seconds, sizeof(seconds), "%" PRIu32,
+                 recorder->segment_seconds);
+        av_dict_set(&muxer_options, "segment_time", seconds, 0);
+        av_dict_set(&muxer_options, "segment_format",
+                    sc_recorder_get_format_name(recorder->format), 0);
+        // Every file starts at timestamp 0
+        av_dict_set(&muxer_options, "reset_timestamps", "1", 0);
+    }
+
+    bool ok = avformat_write_header(recorder->ctx, &muxer_options) >= 0;
+    av_dict_free(&muxer_options);
     if (!ok) {
         LOGE("Failed to write header to %s", recorder->filename);
         goto end;
@@ -294,6 +328,11 @@ sc_recorder_write_pts(struct sc_recorder *recorder, int64_t pts_us) {
 static bool
 sc_recorder_process_packets(struct sc_recorder *recorder) {
     int64_t pts_origin = AV_NOPTS_VALUE;
+    // --record-segment: pts (relative to pts_origin) of the next cut. Like the
+    // segment muxer, count from the first video packet.
+    int64_t segment_next_pts = AV_NOPTS_VALUE;
+    int64_t segment_us = (int64_t) recorder->segment_seconds * 1000000;
+    bool key_frame_requested = false;
 
     bool header_written = sc_recorder_process_header(recorder);
     if (!header_written) {
@@ -400,6 +439,21 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
         if (video_pkt) {
             video_pkt->pts -= pts_origin;
             video_pkt->dts = video_pkt->pts;
+
+            if (segment_us && segment_next_pts == AV_NOPTS_VALUE) {
+                segment_next_pts = video_pkt->pts + segment_us;
+            } else if (segment_us && video_pkt->pts >= segment_next_pts) {
+                if (video_pkt->flags & AV_PKT_FLAG_KEY) {
+                    // The segment muxer cuts on this key frame
+                    segment_next_pts += segment_us;
+                    key_frame_requested = false;
+                } else if (!key_frame_requested
+                        && recorder->cbs->on_key_frame_wanted) {
+                    recorder->cbs->on_key_frame_wanted(recorder,
+                                                      recorder->cbs_userdata);
+                    key_frame_requested = true;
+                }
+            }
 
             if (video_pkt_previous) {
                 // we now know the duration of the previous packet
@@ -789,8 +843,9 @@ sc_recorder_stream_init(struct sc_recorder_stream *stream) {
 
 bool
 sc_recorder_init(struct sc_recorder *recorder, const char *filename,
-                 const char *pts_filename, enum sc_record_format format,
-                 bool video, bool audio, enum sc_orientation orientation,
+                 const char *pts_filename, uint32_t segment_seconds,
+                 enum sc_record_format format, bool video, bool audio,
+                 enum sc_orientation orientation,
                  const struct sc_recorder_callbacks *cbs, void *cbs_userdata) {
     assert(!sc_orientation_is_mirror(orientation));
 
@@ -800,6 +855,7 @@ sc_recorder_init(struct sc_recorder *recorder, const char *filename,
         return false;
     }
 
+    recorder->segment_seconds = segment_seconds;
     recorder->pts_filename = pts_filename ? strdup(pts_filename) : NULL;
     if (pts_filename && !recorder->pts_filename) {
         LOG_OOM();

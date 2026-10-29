@@ -89,6 +89,8 @@ else
         --enable-muxer=opus
         --enable-muxer=flac
         --enable-muxer=wav
+        # --record-segment
+        --enable-muxer=segment
     )
 
     if [[ "$HOST" == linux ]]

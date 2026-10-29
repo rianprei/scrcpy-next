@@ -231,6 +231,20 @@ static void test_camera_focus(void) {
     assert(args3.opts.camera_ae_lock && args3.opts.camera_awb_lock);
     assert(args3.opts.camera_ois && args3.opts.camera_eis);
 
+    struct scrcpy_cli_args args5 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv5[] = {"scrcpy", "--record=rec-%03d.mkv", "--record-segment=60"};
+    assert(scrcpy_parse_args(&args5, ARRAY_LEN(argv5), argv5));
+    assert(args5.opts.record_segment == 60);
+
+    // the filename needs an index pattern
+    struct scrcpy_cli_args args6 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv6[] = {"scrcpy", "--record=rec.mkv", "--record-segment=60"};
+    assert(!scrcpy_parse_args(&args6, ARRAY_LEN(argv6), argv6));
+
     // ISO without exposure time
     struct scrcpy_cli_args args4 = {
         .opts = scrcpy_options_default,

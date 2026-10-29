@@ -28,6 +28,7 @@ enum {
     OPT_CROP,
     OPT_RECORD_FORMAT,
     OPT_RECORD_PTS,
+    OPT_RECORD_SEGMENT,
     OPT_PREFER_TEXT,
     OPT_WINDOW_X,
     OPT_WINDOW_Y,
@@ -1079,6 +1080,16 @@ static const struct sc_option options[] = {
         .text = "Write one CSV row for every video packet written to the "
                 "recording. The timestamp is the raw device presentation "
                 "timestamp in microseconds.",
+    },
+    {
+        .longopt_id = OPT_RECORD_SEGMENT,
+        .longopt = "record-segment",
+        .argdesc = "seconds",
+        .text = "Split the recording into files of about this duration (cut "
+                "on the next key frame). The recording filename must contain a "
+                "printf-style index, for example \"rec-%03d.mkv\".\n"
+                "For regular cuts, also set a short key frame interval, for "
+                "example --video-codec-options=i-frame-interval:float=2.",
     },
     {
         .longopt_id = OPT_RECORD_ORIENTATION,
@@ -3110,6 +3121,15 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_RECORD_PTS:
                 opts->record_pts_filename = optarg;
                 break;
+            case OPT_RECORD_SEGMENT: {
+                long value;
+                if (!parse_integer_arg(optarg, &value, false, 1, 86400,
+                                       "record segment duration")) {
+                    return false;
+                }
+                opts->record_segment = (uint32_t) value;
+                break;
+            }
             case 'h':
                 args->help = true;
                 break;
@@ -4174,6 +4194,18 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     if (opts->record_pts_filename && !opts->record_filename) {
         LOGE("Record PTS file specified without recording");
         return false;
+    }
+
+    if (opts->record_segment) {
+        if (!opts->record_filename) {
+            LOGE("--record-segment specified without recording");
+            return false;
+        }
+        if (!strchr(opts->record_filename, '%')) {
+            LOGE("With --record-segment, the recording filename must contain "
+                 "an index pattern, for example \"rec-%%03d.mkv\"");
+            return false;
+        }
     }
 
     if (opts->record_pts_filename && !opts->video) {

@@ -109,6 +109,7 @@ _scrcpy() {
         --raw-key-events
         --record-format=
         --record-pts=
+        --record-segment=
         --record-orientation=
         --render-driver=
         --render-fit=

@@ -286,6 +286,7 @@ struct scrcpy_options {
     const char *crop;
     const char *record_filename;
     const char *record_pts_filename;
+    uint32_t record_segment; // seconds, 0 if disabled
     const char *window_title;
     const char *push_target;
     const char *render_driver;

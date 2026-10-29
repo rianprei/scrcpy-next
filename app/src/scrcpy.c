@@ -419,19 +419,30 @@ sc_init_video_hwdec(struct sc_hwdec *hwdec, enum sc_hwdec_mode mode,
 }
 
 static void
-sc_stream_sink_on_new_client(void *userdata) {
-    struct scrcpy *s = userdata;
-
-    // A client joining the stream cannot decode anything before the next key
-    // frame: request one instead of waiting for the periodic one
+sc_request_key_frame(struct scrcpy *s, const char *why) {
     if (atomic_load(&s->controller_running)) {
         struct sc_control_msg msg = {
             .type = SC_CONTROL_MSG_TYPE_REQUEST_KEY_FRAME,
         };
         if (!sc_controller_push_msg(&s->controller, &msg)) {
-            LOGW("Could not request a key frame for the new stream client");
+            LOGW("Could not request a key frame (%s)", why);
         }
     }
+}
+
+static void
+sc_recorder_on_key_frame_wanted(struct sc_recorder *recorder, void *userdata) {
+    (void) recorder;
+    // The next recording file (--record-segment) must start on a key frame:
+    // request one instead of waiting for the periodic one
+    sc_request_key_frame(userdata, "next recording segment");
+}
+
+static void
+sc_stream_sink_on_new_client(void *userdata) {
+    // A client joining the stream cannot decode anything before the next key
+    // frame: request one instead of waiting for the periodic one
+    sc_request_key_frame(userdata, "new stream client");
 }
 
 static bool
@@ -736,12 +747,14 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
     if (options->record_filename) {
         static const struct sc_recorder_callbacks recorder_cbs = {
             .on_ended = sc_recorder_on_ended,
+            .on_key_frame_wanted = sc_recorder_on_key_frame_wanted,
         };
         if (!sc_recorder_init(&s->recorder, options->record_filename,
                               options->record_pts_filename,
+                              options->record_segment,
                               options->record_format, options->video,
                               options->audio, options->record_orientation,
-                              &recorder_cbs, NULL)) {
+                              &recorder_cbs, s)) {
             goto end;
         }
         recorder_initialized = true;

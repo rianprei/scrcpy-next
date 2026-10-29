@@ -678,6 +678,10 @@ Write one CSV row ("<frame index>,<pts>") for every video packet written to the 
 Requires \fB\-\-record\fR.
 
 .TP
+.BI "\-\-record\-segment " seconds
+Split the recording into files of about this duration (cut on the next key frame). The recording filename must contain a printf-style index, for example "rec-%03d.mkv". For regular cuts, also set a short key frame interval, for example \fB\-\-video\-codec\-options=i\-frame\-interval:float=2\fR.
+
+.TP
 .BI "\-\-record\-orientation " value
 Set the record orientation.
 

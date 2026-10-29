@@ -40,6 +40,7 @@ struct sc_recorder {
 
     char *filename;
     char *pts_filename;
+    uint32_t segment_seconds; // 0 if the recording is not split
     FILE *pts_file;
     uint64_t pts_frame_index;
     enum sc_record_format format;
@@ -70,12 +71,16 @@ struct sc_recorder {
 struct sc_recorder_callbacks {
     void (*on_ended)(struct sc_recorder *recorder, bool success,
                      void *userdata);
+
+    // Optional, called from the recorder thread (--record-segment): a key
+    // frame is needed to start the next file
+    void (*on_key_frame_wanted)(struct sc_recorder *recorder, void *userdata);
 };
 
 bool
 sc_recorder_init(struct sc_recorder *recorder, const char *filename,
-                 const char *pts_filename, enum sc_record_format format,
-                 bool video, bool audio,
+                 const char *pts_filename, uint32_t segment_seconds,
+                 enum sc_record_format format, bool video, bool audio,
                  enum sc_orientation orientation,
                  const struct sc_recorder_callbacks *cbs, void *cbs_userdata);
 
