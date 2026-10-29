@@ -445,6 +445,9 @@ execute_server(struct sc_server *server,
         // By default, clipboard_autosync is true
         ADD_PARAM("clipboard_autosync=false");
     }
+    if (params->clipboard_image) {
+        ADD_PARAM("clipboard_image=true");
+    }
     if (params->media_control) {
         ADD_PARAM("media_control=true");
     }

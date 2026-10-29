@@ -13,6 +13,7 @@ public class DeviceMessageWriter {
     private static final int MESSAGE_MAX_SIZE = 1 << 18; // 256k
     public static final int CLIPBOARD_TEXT_MAX_LENGTH = MESSAGE_MAX_SIZE - 5; // type: 1 byte; length: 4 bytes
     private static final int MEDIA_TEXT_MAX_LENGTH = 1024;
+    public static final int CLIPBOARD_IMAGE_MAX_SIZE = 1 << 23; // 8M, must match the client (device_msg.h)
 
     private final DataOutputStream dos;
 
@@ -30,6 +31,14 @@ public class DeviceMessageWriter {
                 int len = StringUtils.getUtf8TruncationIndex(raw, CLIPBOARD_TEXT_MAX_LENGTH);
                 dos.writeInt(len);
                 dos.write(raw, 0, len);
+                break;
+            case DeviceMessage.TYPE_CLIPBOARD_IMAGE:
+                byte[] mimeType = msg.getText().getBytes(StandardCharsets.UTF_8);
+                dos.writeByte(mimeType.length);
+                dos.write(mimeType);
+                byte[] image = msg.getData();
+                dos.writeInt(image.length);
+                dos.write(image);
                 break;
             case DeviceMessage.TYPE_ACK_CLIPBOARD:
                 dos.writeLong(msg.getSequence());

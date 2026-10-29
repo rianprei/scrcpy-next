@@ -41,7 +41,8 @@ public final class FakeContext extends ContextWrapper {
         @SuppressWarnings({"unused", "ProtectedMemberInFinalClass"})
         // @Override (but super-class method not visible)
         protected IContentProvider acquireUnstableProvider(Context c, String name) {
-            return null;
+            // Used by openInputStream() (e.g. to read a clipboard image)
+            return acquireProvider(c, name);
         }
 
         @SuppressWarnings("unused")

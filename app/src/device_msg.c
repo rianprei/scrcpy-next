@@ -67,6 +67,40 @@ sc_device_msg_deserialize(const uint8_t *buf, size_t len,
             msg->clipboard.text = text;
             return 5 + clipboard_len;
         }
+        case DEVICE_MSG_TYPE_CLIPBOARD_IMAGE: {
+            if (len < 2) {
+                return 0; // no complete message
+            }
+            size_t mime_len = buf[1];
+            if (len - 2 < mime_len + 4) {
+                return 0; // no complete message
+            }
+            size_t size = sc_read32be(&buf[2 + mime_len]);
+            if (size > DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE) {
+                LOGE("Clipboard image too large: %" SC_PRIsizet " bytes", size);
+                return -1; // it could never be received
+            }
+            size_t header = 2 + mime_len + 4;
+            if (size > len - header) {
+                return 0; // no complete message
+            }
+            char *mime_type = malloc(mime_len + 1);
+            uint8_t *data = malloc(size ? size : 1);
+            if (!mime_type || !data) {
+                LOG_OOM();
+                free(mime_type);
+                free(data);
+                return -1;
+            }
+            memcpy(mime_type, &buf[2], mime_len);
+            mime_type[mime_len] = '\0';
+            memcpy(data, &buf[header], size);
+
+            msg->clipboard_image.mime_type = mime_type;
+            msg->clipboard_image.data = data;
+            msg->clipboard_image.size = size;
+            return header + size;
+        }
         case DEVICE_MSG_TYPE_ACK_CLIPBOARD: {
             if (len < 9) {
                 return 0; // no complete message
@@ -139,6 +173,10 @@ sc_device_msg_destroy(struct sc_device_msg *msg) {
     switch (msg->type) {
         case DEVICE_MSG_TYPE_CLIPBOARD:
             free(msg->clipboard.text);
+            break;
+        case DEVICE_MSG_TYPE_CLIPBOARD_IMAGE:
+            free(msg->clipboard_image.mime_type);
+            free(msg->clipboard_image.data);
             break;
         case DEVICE_MSG_TYPE_UHID_OUTPUT:
             free(msg->uhid_output.data);

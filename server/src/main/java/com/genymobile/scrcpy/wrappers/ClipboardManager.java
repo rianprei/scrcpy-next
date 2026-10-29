@@ -1,11 +1,28 @@
 package com.genymobile.scrcpy.wrappers;
 
 import com.genymobile.scrcpy.FakeContext;
+import com.genymobile.scrcpy.util.Ln;
 
 import android.content.ClipData;
 import android.content.Context;
+import android.net.Uri;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public final class ClipboardManager {
+
+    public static final class Image {
+        public final String mimeType;
+        public final byte[] data;
+
+        private Image(String mimeType, byte[] data) {
+            this.mimeType = mimeType;
+            this.data = data;
+        }
+    }
+
     private final android.content.ClipboardManager manager;
 
     static ClipboardManager create() {
@@ -29,6 +46,44 @@ public final class ClipboardManager {
             return null;
         }
         return clipData.getItemAt(0).getText();
+    }
+
+    /**
+     * Read the image of the clipboard (the content URI of the first item, if its MIME type is image/*).
+     *
+     * @return the image, or null if there is none or if it is larger than maxSize bytes
+     */
+    public Image getImage(int maxSize) {
+        ClipData clipData = manager.getPrimaryClip();
+        if (clipData == null || clipData.getItemCount() == 0) {
+            return null;
+        }
+        String[] mimeTypes = clipData.getDescription().filterMimeTypes("image/*");
+        Uri uri = clipData.getItemAt(0).getUri();
+        if (mimeTypes == null || uri == null || mimeTypes[0].length() > 255) {
+            return null;
+        }
+
+        try (InputStream in = FakeContext.get().getContentResolver().openInputStream(uri)) {
+            if (in == null) {
+                return null;
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[64 * 1024];
+            int r;
+            while ((r = in.read(buffer)) != -1) {
+                if (out.size() + r > maxSize) {
+                    Ln.w("Device clipboard image too large (more than " + maxSize + " bytes), not copied");
+                    return null;
+                }
+                out.write(buffer, 0, r);
+            }
+            return new Image(mimeTypes[0], out.toByteArray());
+        } catch (IOException | RuntimeException e) {
+            // The provider may refuse (e.g. SecurityException) or fail
+            Ln.w("Could not read the device clipboard image: " + e);
+            return null;
+        }
     }
 
     public boolean setText(CharSequence text) {

@@ -10,12 +10,17 @@
 #define DEVICE_MSG_MAX_SIZE (1 << 18) // 256k
 // type: 1 byte; length: 4 bytes
 #define DEVICE_MSG_TEXT_MAX_LENGTH (DEVICE_MSG_MAX_SIZE - 5)
+// --clipboard-image, must match the server (DeviceMessageWriter.java)
+#define DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE (1 << 23) // 8M
+// type: 1 byte; MIME type: 1 + 255 bytes; image size: 4 bytes
+#define DEVICE_MSG_BUFFER_SIZE (DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE + 261)
 
 enum sc_device_msg_type {
     DEVICE_MSG_TYPE_CLIPBOARD,
     DEVICE_MSG_TYPE_ACK_CLIPBOARD,
     DEVICE_MSG_TYPE_UHID_OUTPUT,
     DEVICE_MSG_TYPE_MEDIA_UPDATE,
+    DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
 };
 
 // Values must be kept in sync with the server (DeviceMessage.java)
@@ -42,6 +47,11 @@ struct sc_device_msg {
         struct {
             char *text; // owned, to be freed by free()
         } clipboard;
+        struct {
+            char *mime_type; // owned, to be freed by free()
+            uint8_t *data; // owned, to be freed by free()
+            uint32_t size;
+        } clipboard_image;
         struct {
             uint64_t sequence;
         } ack_clipboard;

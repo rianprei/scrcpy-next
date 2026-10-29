@@ -127,6 +127,43 @@ static void test_deserialize_media_update_incomplete(void) {
     assert(r == 0); // no complete message
 }
 
+static void test_deserialize_clipboard_image(void) {
+    const uint8_t input[] = {
+        DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
+        9, 'i', 'm', 'a', 'g', 'e', '/', 'p', 'n', 'g',
+        0, 0, 0, 3, // size
+        0x89, 'P', 'N',
+    };
+
+    struct sc_device_msg msg;
+    ssize_t r = sc_device_msg_deserialize(input, sizeof(input), &msg);
+    assert(r == sizeof(input));
+
+    assert(msg.type == DEVICE_MSG_TYPE_CLIPBOARD_IMAGE);
+    assert(!strcmp(msg.clipboard_image.mime_type, "image/png"));
+    assert(msg.clipboard_image.size == 3);
+    assert(!memcmp(msg.clipboard_image.data, &input[15], 3));
+    sc_device_msg_destroy(&msg);
+
+    // incomplete
+    r = sc_device_msg_deserialize(input, sizeof(input) - 1, &msg);
+    assert(r == 0);
+    r = sc_device_msg_deserialize(input, 5, &msg);
+    assert(r == 0);
+}
+
+static void test_deserialize_clipboard_image_too_large(void) {
+    const uint8_t input[] = {
+        DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
+        0, // empty MIME type
+        0, 0x80, 0, 1, // size: 8M + 1
+    };
+
+    struct sc_device_msg msg;
+    ssize_t r = sc_device_msg_deserialize(input, sizeof(input), &msg);
+    assert(r == -1); // could never be received
+}
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -137,5 +174,7 @@ int main(int argc, char *argv[]) {
     test_deserialize_uhid_output();
     test_deserialize_media_update();
     test_deserialize_media_update_incomplete();
+    test_deserialize_clipboard_image();
+    test_deserialize_clipboard_image_too_large();
     return 0;
 }

@@ -126,6 +126,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .keymap = NULL,
     .power_off_on_close = false,
     .clipboard_autosync = true,
+    .clipboard_image = false,
     .downsize_on_error = true,
     .tcpip = false,
     .tcpip_dst = NULL,

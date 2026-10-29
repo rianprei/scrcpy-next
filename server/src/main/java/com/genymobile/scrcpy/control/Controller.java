@@ -96,6 +96,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private final CleanUp cleanUp;
     private final DeviceMessageSender sender;
     private final boolean clipboardAutosync;
+    private final boolean clipboardImage;
     private final boolean powerOn;
     private final boolean keepActive;
     private final String touchscreenId;
@@ -131,6 +132,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             this.supportsInputEvents = false;
             this.sender = null;
             this.clipboardAutosync = false;
+            this.clipboardImage = false;
             this.powerOn = false;
             this.keepActive = false;
             return;
@@ -139,6 +141,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         this.displayId = options.getDisplayId();
         this.touchscreenId = options.getTouchscreenId();
         this.clipboardAutosync = options.getClipboardAutosync();
+        this.clipboardImage = options.getClipboardImage();
         this.powerOn = options.getPowerOn();
         this.keepActive = options.getKeepActive();
         initPointers();
@@ -162,11 +165,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                         // This is a notification for the change we are currently applying, ignore it
                         return;
                     }
-                    String text = Device.getClipboardText();
-                    if (text != null) {
-                        DeviceMessage msg = DeviceMessage.createClipboard(text);
-                        sender.send(msg);
-                    }
+                    sendClipboard();
                 });
             } else {
                 Ln.w("No clipboard manager, copy-paste between device and computer will not work");
@@ -752,11 +751,23 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         // particular when COPY or CUT are injected, so it should not be synchronized twice. On Android < 7, do not synchronize at all rather than
         // copying an old clipboard content.
         if (!clipboardAutosync) {
-            String clipboardText = Device.getClipboardText();
-            if (clipboardText != null) {
-                DeviceMessage msg = DeviceMessage.createClipboard(clipboardText);
-                sender.send(msg);
+            sendClipboard();
+        }
+    }
+
+    private void sendClipboard() {
+        if (clipboardImage) {
+            ClipboardManager.Image image = Device.getClipboardImage(DeviceMessageWriter.CLIPBOARD_IMAGE_MAX_SIZE);
+            if (image != null) {
+                sender.send(DeviceMessage.createClipboardImage(image.mimeType, image.data));
+                return;
             }
+        }
+
+        String text = Device.getClipboardText();
+        if (text != null) {
+            DeviceMessage msg = DeviceMessage.createClipboard(text);
+            sender.send(msg);
         }
     }
 

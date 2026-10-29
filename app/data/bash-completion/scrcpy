@@ -34,6 +34,7 @@ _scrcpy() {
         --camera-zoom=
         --capture-orientation=
         --client-audio-source=
+        --clipboard-image
         --config-file=
         --crop=
         -d --select-usb

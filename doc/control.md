@@ -89,6 +89,13 @@ way as <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd>).
 To disable automatic clipboard synchronization, use
 `--no-clipboard-autosync`.
 
+By default, only text is copied from the device clipboard. To also copy images
+(up to 8 MiB, for example an image copied from a browser):
+
+```bash
+scrcpy --clipboard-image
+```
+
 
 ## Pinch-to-zoom, rotate and tilt simulation
 

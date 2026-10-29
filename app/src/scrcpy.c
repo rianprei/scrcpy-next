@@ -583,6 +583,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
         .force_adb_forward = options->force_adb_forward,
         .power_off_on_close = options->power_off_on_close,
         .clipboard_autosync = options->clipboard_autosync,
+        .clipboard_image = options->clipboard_image,
 #ifdef HAVE_MPRIS
         .media_control = options->mpris,
 #endif

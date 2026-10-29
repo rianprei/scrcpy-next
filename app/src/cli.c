@@ -147,6 +147,7 @@ enum {
     OPT_STREAM_SINK,
     OPT_CONFIG_FILE,
     OPT_NO_CONFIG,
+    OPT_CLIPBOARD_IMAGE,
     OPT_RECONNECT,
     OPT_SHOW_AXIS,
     OPT_WINDOW_SIZE_UNIT,
@@ -463,6 +464,13 @@ static const struct sc_option options[] = {
                 "example \"file:///path/to/audio.mp3\"), played in a loop.\n"
                 "Use --list-client-audio-sources to list the available "
                 "devices.",
+    },
+    {
+        .longopt_id = OPT_CLIPBOARD_IMAGE,
+        .longopt = "clipboard-image",
+        .text = "Also copy images (up to 8 MiB) from the device clipboard to "
+                "the computer clipboard (when the device clipboard changes, or "
+                "on MOD+c/MOD+x with --no-clipboard-autosync).",
     },
     {
         .longopt_id = OPT_CONFIG_FILE,
@@ -3396,6 +3404,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
                     return false;
                 }
                 break;
+            case OPT_CLIPBOARD_IMAGE:
+                opts->clipboard_image = true;
+                break;
             case OPT_NO_CLIPBOARD_AUTOSYNC:
                 opts->clipboard_autosync = false;
                 break;
@@ -4341,6 +4352,10 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         }
         if (opts->power_off_on_close) {
             LOGE("Cannot request power off on close if control is disabled");
+            return false;
+        }
+        if (opts->clipboard_image) {
+            LOGE("Cannot copy clipboard images if control is disabled");
             return false;
         }
         if (opts->start_app) {

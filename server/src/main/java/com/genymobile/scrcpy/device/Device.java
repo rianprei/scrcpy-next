@@ -119,6 +119,14 @@ public final class Device {
         return s.toString();
     }
 
+    public static ClipboardManager.Image getClipboardImage(int maxSize) {
+        ClipboardManager clipboardManager = ServiceManager.getClipboardManager();
+        if (clipboardManager == null) {
+            return null;
+        }
+        return clipboardManager.getImage(maxSize);
+    }
+
     public static boolean setClipboardText(String text) {
         ClipboardManager clipboardManager = ServiceManager.getClipboardManager();
         if (clipboardManager == null) {

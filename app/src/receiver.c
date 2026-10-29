@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SDL3/SDL_clipboard.h>
 
 #include "device_msg.h"
@@ -68,6 +69,52 @@ task_set_clipboard(void *userdata) {
     free(text);
 }
 
+struct sc_clipboard_image {
+    char *mime_type;
+    uint8_t *data;
+    uint32_t size;
+};
+
+static const void *
+clipboard_image_get_data(void *userdata, const char *mime_type, size_t *size) {
+    struct sc_clipboard_image *image = userdata;
+    if (strcmp(mime_type, image->mime_type)) {
+        *size = 0;
+        return NULL;
+    }
+    *size = image->size;
+    return image->data;
+}
+
+static void
+clipboard_image_cleanup(void *userdata) {
+    struct sc_clipboard_image *image = userdata;
+    free(image->mime_type);
+    free(image->data);
+    free(image);
+}
+
+static void
+task_set_clipboard_image(void *userdata) {
+    assert(sc_thread_is_main());
+
+    struct sc_clipboard_image *image = userdata;
+
+    // The image now belongs to SDL, even on error: it calls the cleanup
+    // callback once the data is replaced or cleared (not before this function
+    // returns on success)
+    const char *mime_types[] = {image->mime_type};
+    bool ok = SDL_SetClipboardData(clipboard_image_get_data,
+                                   clipboard_image_cleanup, image, mime_types,
+                                   1);
+    if (ok) {
+        LOGI("Device clipboard image copied (%s, %" PRIu32 " bytes)",
+             image->mime_type, image->size);
+    } else {
+        LOGE("Could not set clipboard image: %s", SDL_GetError());
+    }
+}
+
 static void
 task_uhid_output(void *userdata) {
     assert(sc_thread_is_main());
@@ -92,6 +139,28 @@ process_msg(struct sc_receiver *receiver, struct sc_device_msg *msg) {
             if (!ok) {
                 LOGW("Could not post clipboard to main thread");
                 free(text);
+                return;
+            }
+
+            break;
+        }
+        case DEVICE_MSG_TYPE_CLIPBOARD_IMAGE: {
+            struct sc_clipboard_image *image = malloc(sizeof(*image));
+            if (!image) {
+                LOG_OOM();
+                sc_device_msg_destroy(msg);
+                return;
+            }
+            // Take ownership of the data (do not destroy the msg)
+            image->mime_type = msg->clipboard_image.mime_type;
+            image->data = msg->clipboard_image.data;
+            image->size = msg->clipboard_image.size;
+
+            bool ok = sc_run_on_main_thread(task_set_clipboard_image, image,
+                                            false);
+            if (!ok) {
+                LOGW("Could not post clipboard image to main thread");
+                clipboard_image_cleanup(image);
                 return;
             }
 
@@ -207,15 +276,17 @@ static int
 run_receiver(void *data) {
     struct sc_receiver *receiver = data;
 
-    static uint8_t buf[DEVICE_MSG_MAX_SIZE];
+    // Large enough for a clipboard image (--clipboard-image); the pages are
+    // only touched when such a message is received
+    static uint8_t buf[DEVICE_MSG_BUFFER_SIZE];
     size_t head = 0;
 
     bool error = false;
 
     for (;;) {
-        assert(head < DEVICE_MSG_MAX_SIZE);
+        assert(head < DEVICE_MSG_BUFFER_SIZE);
         ssize_t r = net_recv(receiver->control_socket, buf + head,
-                             DEVICE_MSG_MAX_SIZE - head);
+                             DEVICE_MSG_BUFFER_SIZE - head);
         if (r <= 0) {
             LOGD("Receiver stopped");
             // device disconnected: keep error=false

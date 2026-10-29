@@ -33,6 +33,29 @@ public class DeviceMessageWriterTest {
     }
 
     @Test
+    public void testSerializeClipboardImage() throws IOException {
+        byte[] image = {(byte) 0x89, 'P', 'N', 'G', 0, 1, 2};
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+        dos.writeByte(DeviceMessage.TYPE_CLIPBOARD_IMAGE);
+        dos.writeByte(9); // "image/png"
+        dos.write("image/png".getBytes(StandardCharsets.UTF_8));
+        dos.writeInt(image.length);
+        dos.write(image);
+        byte[] expected = bos.toByteArray();
+
+        bos = new ByteArrayOutputStream();
+        DeviceMessageWriter writer = new DeviceMessageWriter(bos);
+
+        DeviceMessage msg = DeviceMessage.createClipboardImage("image/png", image);
+        writer.write(msg);
+
+        byte[] actual = bos.toByteArray();
+
+        Assert.assertArrayEquals(expected, actual);
+    }
+
+    @Test
     public void testSerializeAckSetClipboard() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos);

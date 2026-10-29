@@ -6,6 +6,7 @@ public final class DeviceMessage {
     public static final int TYPE_ACK_CLIPBOARD = 1;
     public static final int TYPE_UHID_OUTPUT = 2;
     public static final int TYPE_MEDIA_UPDATE = 3;
+    public static final int TYPE_CLIPBOARD_IMAGE = 4;
 
     // Values must be kept in sync with the client (device_msg.h)
     public static final int MEDIA_STATE_STOPPED = 0;
@@ -41,6 +42,14 @@ public final class DeviceMessage {
         DeviceMessage event = new DeviceMessage();
         event.type = TYPE_CLIPBOARD;
         event.text = text;
+        return event;
+    }
+
+    public static DeviceMessage createClipboardImage(String mimeType, byte[] data) {
+        DeviceMessage event = new DeviceMessage();
+        event.type = TYPE_CLIPBOARD_IMAGE;
+        event.text = mimeType;
+        event.data = data;
         return event;
     }
 
