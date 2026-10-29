@@ -127,6 +127,7 @@ arguments=(
     '--shortcut-mod=[\[key1,key2+key3,...\] Specify the modifiers to use for scrcpy shortcuts]:shortcut mod:(lctrl rctrl lalt ralt lsuper rsuper)'
     '--start-app=[Start an Android app]'
     '--stream-sink=[Stream the device video and audio as MPEG-TS to the given URL \(srt, udp or tcp\)]'
+    '--show-keymap[Label the keys of --keymap on the mirrored screen]'
     '--show-axis[Show numbered device pixel coordinates along the edges of the mirrored screen]'
     {-t,--show-touches}'[Show physical touches]'
     '--tcpip[\(optional \[ip\:port\]\) Configure and connect the device over TCP/IP]'

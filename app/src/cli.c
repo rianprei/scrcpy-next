@@ -150,6 +150,7 @@ enum {
     OPT_CLIPBOARD_IMAGE,
     OPT_RECONNECT,
     OPT_SHOW_AXIS,
+    OPT_SHOW_KEYMAP,
     OPT_WINDOW_SIZE_UNIT,
 };
 
@@ -1206,6 +1207,12 @@ static const struct sc_option options[] = {
         .longopt = "show-axis",
         .text = "Show numbered device pixel coordinates along the top and "
                 "left edges of the mirrored screen.",
+    },
+    {
+        .longopt_id = OPT_SHOW_KEYMAP,
+        .longopt = "show-keymap",
+        .text = "Label the keys of --keymap at their positions on the "
+                "mirrored screen, while the keymap is enabled (MOD+j).",
     },
     {
         .shortopt = 't',
@@ -3238,6 +3245,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case 't':
                 opts->show_touches = true;
                 break;
+            case OPT_SHOW_KEYMAP:
+                opts->show_keymap = true;
+                break;
             case OPT_SHOW_AXIS:
                 opts->show_axis = true;
                 break;
@@ -3776,6 +3786,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         opts->video_playback = false;
         // Do not power on the device on start if video capture is disabled
         opts->power_on = false;
+    }
+
+    if (opts->show_keymap && (!opts->keymap || !opts->video_playback)) {
+        LOGE("--show-keymap requires --keymap and video playback");
+        return false;
     }
 
     if (opts->show_axis) {

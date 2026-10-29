@@ -365,6 +365,7 @@ struct scrcpy_options {
 #endif
     bool show_touches;
     bool show_axis;
+    bool show_keymap;
     bool fullscreen;
     bool keyboard_grab;
     bool always_on_top;

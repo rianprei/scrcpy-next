@@ -123,6 +123,7 @@ _scrcpy() {
         --start-app=
         --stream-sink=
         --show-axis
+        --show-keymap
         -t --show-touches
         --tcpip
         --tcpip=

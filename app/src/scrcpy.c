@@ -996,6 +996,7 @@ aoa_complete:
             .reconnect = options->reconnect,
             .window = rc->window,
             .show_axis = options->show_axis,
+            .show_keymap = options->show_keymap,
             .axis_size = axis_size,
             .controller = controller,
             .fp = fp,

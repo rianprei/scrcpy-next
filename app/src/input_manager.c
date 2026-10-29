@@ -489,6 +489,8 @@ toggle_keymap(struct sc_input_manager *im) {
         }
     }
     LOGI("Keymap %s", im->keymap_enabled ? "enabled" : "disabled");
+    // Show or hide the keymap labels (--show-keymap)
+    sc_screen_refresh(im->screen);
 }
 
 static bool

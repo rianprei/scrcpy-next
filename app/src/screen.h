@@ -53,6 +53,7 @@ struct sc_screen {
     bool otg_automatic_screenshot;
     bool show_axis;
     struct sc_size axis_size; // device screen size in natural orientation
+    bool show_keymap;
     enum sc_window_size_unit window_size_unit;
 
     struct sc_controller *controller;
@@ -143,6 +144,7 @@ struct sc_screen_params {
     SDL_Window *window;
     bool show_axis;
     struct sc_size axis_size;
+    bool show_keymap;
 
     struct sc_controller *controller;
     struct sc_file_pusher *fp;
@@ -243,6 +245,10 @@ sc_screen_set_orientation(struct sc_screen *screen,
 // set the display pause state
 void
 sc_screen_set_paused(struct sc_screen *screen, bool paused);
+
+// Render the current frame again (e.g. after an overlay change)
+void
+sc_screen_refresh(struct sc_screen *screen);
 
 // react to SDL events
 void

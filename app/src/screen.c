@@ -423,6 +423,46 @@ sc_screen_render_axis(struct sc_screen *screen, const SDL_FRect *geometry) {
     SDL_SetRenderDrawBlendMode(renderer, old_blend_mode);
 }
 
+// --show-keymap: label the mapped keys at their touch positions
+static void
+sc_screen_render_keymap(struct sc_screen *screen, const SDL_FRect *geometry) {
+    const struct sc_keymap *km = screen->im.keymap;
+    assert(km);
+
+    SDL_Renderer *renderer = screen->renderer;
+    SDL_BlendMode old_blend_mode;
+    if (!SDL_GetRenderDrawBlendMode(renderer, &old_blend_mode)) {
+        LOGW("Could not get renderer blend mode: %s", SDL_GetError());
+        return;
+    }
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // The debug font is 8x8 pixels: draw it twice as large
+    const float scale = 2;
+    SDL_SetRenderScale(renderer, scale, scale);
+    const float ch = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE;
+    for (unsigned i = 0; i < km->count; ++i) {
+        const struct sc_keymap_entry *entry = &km->entries[i];
+        const char *name = SDL_GetKeyName(entry->key);
+        float w = strlen(name) * ch;
+        float x = (geometry->x + entry->x * geometry->w) / scale - w / 2;
+        float y = (geometry->y + entry->y * geometry->h) / scale - ch / 2;
+        // Keep the label inside the screen
+        x = MAX(geometry->x / scale + 2,
+                MIN(x, (geometry->x + geometry->w) / scale - w - 2));
+        y = MAX(geometry->y / scale + 2,
+                MIN(y, (geometry->y + geometry->h) / scale - ch - 2));
+
+        SDL_FRect bg = {x - 2, y - 2, w + 4, ch + 4};
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
+        SDL_RenderFillRect(renderer, &bg);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 230);
+        SDL_RenderDebugText(renderer, x, y, name);
+    }
+    SDL_SetRenderScale(renderer, 1, 1);
+    SDL_SetRenderDrawBlendMode(renderer, old_blend_mode);
+}
+
 // render the texture to the renderer
 //
 // Set the update_content_rect flag if the window or content size may have
@@ -509,6 +549,14 @@ sc_screen_render(struct sc_screen *screen, bool update_content_rect) {
     if (screen->show_axis && !screen->disconnected && ok
             && screen->orientation == SC_ORIENTATION_0) {
         sc_screen_render_axis(screen, &geometry);
+    }
+
+    // shortcut: hidden for a rotated display orientation (like the axes), map
+    // the positions if needed
+    if (screen->show_keymap && screen->im.keymap_enabled
+            && !screen->disconnected && ok
+            && screen->orientation == SC_ORIENTATION_0) {
+        sc_screen_render_keymap(screen, &geometry);
     }
 
 end:
@@ -742,6 +790,7 @@ sc_screen_init(struct sc_screen *screen,
     screen->otg_automatic_screenshot = params->otg_automatic_screenshot;
     screen->show_axis = params->show_axis;
     screen->axis_size = params->axis_size;
+    screen->show_keymap = params->show_keymap;
     screen->window_size_unit = params->window_size_unit;
 
     screen->bg.r = (params->background_color >> 16) & 0xFF;
@@ -1399,6 +1448,13 @@ sc_screen_toggle_fullscreen(struct sc_screen *screen) {
     }
 
     LOGD("Requested %s mode", req_fullscreen ? "fullscreen" : "windowed");
+}
+
+void
+sc_screen_refresh(struct sc_screen *screen) {
+    if (screen->window_shown) {
+        sc_screen_render(screen, false);
+    }
 }
 
 void
