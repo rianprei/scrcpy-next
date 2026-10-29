@@ -333,6 +333,18 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
     int64_t segment_next_pts = AV_NOPTS_VALUE;
     int64_t segment_us = (int64_t) recorder->segment_seconds * 1000000;
     bool key_frame_requested = false;
+    // MOD+Shift+p: the streams may be received with different delays, so
+    // both are cut at the same pts: the most recent one received when the
+    // pause is seen (pause_start). The recording resumes on the first video
+    // key frame not older than the most recent pts received when the resume
+    // is seen (resume_min), and the gap is removed from the timestamps.
+    int64_t pts_max = AV_NOPTS_VALUE; // most recent pts received
+    int64_t pause_start = AV_NOPTS_VALUE;
+    int64_t resume_min = AV_NOPTS_VALUE;
+    int64_t resume_pts = AV_NOPTS_VALUE; // pts of the last resume
+    int64_t pause_offset = 0;
+    bool resume_key_frame_requested = false;
+    int64_t video_raw_pts_previous = AV_NOPTS_VALUE;
 
     bool header_written = sc_recorder_process_header(recorder);
     if (!header_written) {
@@ -395,6 +407,9 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
 
         assert(video_pkt || audio_pkt); // at least one
 
+        bool paused = recorder->paused;
+        bool stopped = recorder->stopped;
+
         sc_mutex_unlock(&recorder->mutex);
 
         // Ignore further config packets (e.g. on device orientation
@@ -437,7 +452,72 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
         assert(pts_origin != AV_NOPTS_VALUE);
 
         if (video_pkt) {
-            video_pkt->pts -= pts_origin;
+            pts_max = MAX(pts_max, video_pkt->pts);
+        }
+        if (audio_pkt) {
+            pts_max = MAX(pts_max, audio_pkt->pts);
+        }
+
+        bool hold_audio = false;
+        if (paused) {
+            if (pause_start == AV_NOPTS_VALUE) {
+                pause_start = pts_max;
+            }
+            resume_min = AV_NOPTS_VALUE;
+            resume_key_frame_requested = false;
+        } else if (pause_start != AV_NOPTS_VALUE
+                && resume_min == AV_NOPTS_VALUE) {
+            resume_min = pts_max;
+        }
+
+        // Packets older than pause_start are still recorded
+        if (pause_start != AV_NOPTS_VALUE && video_pkt
+                && video_pkt->pts >= pause_start) {
+            if (!paused && video_pkt->pts >= resume_min
+                    && video_pkt->flags & AV_PKT_FLAG_KEY) {
+                resume_pts = video_pkt->pts;
+            } else {
+                if (video_pkt->flags & AV_PKT_FLAG_KEY) {
+                    // Too old (captured before the resume): request another
+                    resume_key_frame_requested = false;
+                }
+                if (!paused && !resume_key_frame_requested
+                        && recorder->cbs->on_key_frame_wanted) {
+                    recorder->cbs->on_key_frame_wanted(recorder,
+                                                      recorder->cbs_userdata);
+                    resume_key_frame_requested = true;
+                }
+                av_packet_free(&video_pkt);
+            }
+        }
+        if (pause_start != AV_NOPTS_VALUE && audio_pkt
+                && audio_pkt->pts >= pause_start) {
+            if (!recorder->video && !paused
+                    && audio_pkt->pts >= resume_min) {
+                resume_pts = audio_pkt->pts;
+            } else if (paused || stopped) {
+                av_packet_free(&audio_pkt);
+            } else {
+                // Waiting for the video key frame: keep the next audio packet
+                // (the next ones stay queued), it may be more recent
+                hold_audio = true;
+            }
+        }
+
+        if (pause_start != AV_NOPTS_VALUE && resume_pts >= pause_start) {
+            pause_offset += resume_pts - pause_start;
+            pause_start = AV_NOPTS_VALUE;
+            resume_min = AV_NOPTS_VALUE;
+        }
+
+        if (audio_pkt && audio_pkt->pts < resume_pts) {
+            // Audio received late, captured during the pause
+            av_packet_free(&audio_pkt);
+        }
+
+        if (video_pkt) {
+            int64_t raw_pts = video_pkt->pts;
+            video_pkt->pts -= pts_origin + pause_offset;
             video_pkt->dts = video_pkt->pts;
 
             if (segment_us && segment_next_pts == AV_NOPTS_VALUE) {
@@ -460,7 +540,6 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
                 video_pkt_previous->duration = video_pkt->pts
                                              - video_pkt_previous->pts;
 
-                int64_t raw_pts = video_pkt_previous->pts + pts_origin;
                 bool ok = sc_recorder_write_video(recorder, video_pkt_previous);
                 av_packet_free(&video_pkt_previous);
                 if (!ok) {
@@ -468,18 +547,19 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
                     error = true;
                     goto end;
                 }
-                if (!sc_recorder_write_pts(recorder, raw_pts)) {
+                if (!sc_recorder_write_pts(recorder, video_raw_pts_previous)) {
                     error = true;
                     goto end;
                 }
             }
 
             video_pkt_previous = video_pkt;
+            video_raw_pts_previous = raw_pts;
             video_pkt = NULL;
         }
 
-        if (audio_pkt) {
-            audio_pkt->pts -= pts_origin;
+        if (audio_pkt && !hold_audio) {
+            audio_pkt->pts -= pts_origin + pause_offset;
             audio_pkt->dts = audio_pkt->pts;
 
             bool ok = sc_recorder_write_audio(recorder, audio_pkt);
@@ -500,14 +580,13 @@ sc_recorder_process_packets(struct sc_recorder *recorder) {
     if (last) {
         // assign an arbitrary duration to the last packet
         last->duration = 100000;
-        int64_t raw_pts = last->pts + pts_origin;
         bool ok = sc_recorder_write_video(recorder, last);
         if (!ok) {
             // failing to write the last frame is not very serious, no
             // future frame may depend on it, so the resulting file
             // will still be valid
             LOGW("Could not record last packet");
-        } else if (!sc_recorder_write_pts(recorder, raw_pts)) {
+        } else if (!sc_recorder_write_pts(recorder, video_raw_pts_previous)) {
             error = true;
         }
         av_packet_free(&last);
@@ -884,6 +963,7 @@ sc_recorder_init(struct sc_recorder *recorder, const char *filename,
     sc_vecdeque_init(&recorder->video_queue);
     sc_vecdeque_init(&recorder->audio_queue);
     recorder->stopped = false;
+    recorder->paused = false;
 
     recorder->video_init = false;
     recorder->audio_init = false;
@@ -959,6 +1039,15 @@ sc_recorder_start(struct sc_recorder *recorder) {
     }
 
     return true;
+}
+
+void
+sc_recorder_toggle_paused(struct sc_recorder *recorder) {
+    sc_mutex_lock(&recorder->mutex);
+    bool paused = !recorder->paused;
+    recorder->paused = paused;
+    sc_mutex_unlock(&recorder->mutex);
+    LOGI("Recording %s", paused ? "paused" : "resumed");
 }
 
 void

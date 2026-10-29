@@ -92,3 +92,10 @@ mirroring:
 ```bash
 scrcpy --time-limit=20
 ```
+
+## Pause
+
+While the window is shown, <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>p</kbd> pauses
+or resumes the recording. Nothing is recorded during a pause, and the recording
+resumes on the next video key frame (requested immediately unless
+`--no-control`), without a gap in the file.

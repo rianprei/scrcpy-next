@@ -12,6 +12,7 @@
 #include "file_pusher.h"
 #include "keymap.h"
 #include "options.h"
+#include "recorder.h"
 #include "trait/gamepad_processor.h"
 #include "trait/key_processor.h"
 #include "trait/mouse_processor.h"
@@ -19,6 +20,7 @@
 struct sc_input_manager {
     struct sc_controller *controller;
     struct sc_file_pusher *fp;
+    struct sc_recorder *recorder; // NULL if not recording
     struct sc_screen *screen;
 
     struct sc_key_processor *kp;
@@ -75,6 +77,7 @@ struct sc_input_manager {
 struct sc_input_manager_params {
     struct sc_controller *controller;
     struct sc_file_pusher *fp;
+    struct sc_recorder *recorder; // NULL if not recording
     struct sc_screen *screen;
     struct sc_key_processor *kp;
     struct sc_mouse_processor *mp;

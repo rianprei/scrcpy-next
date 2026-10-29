@@ -997,6 +997,7 @@ aoa_complete:
             .axis_size = axis_size,
             .controller = controller,
             .fp = fp,
+            .recorder = options->record_filename ? &s->recorder : NULL,
             .kp = kp,
             .mp = mp,
             .gp = gp,

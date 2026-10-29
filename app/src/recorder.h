@@ -51,6 +51,8 @@ struct sc_recorder {
     sc_cond cond;
     // set on sc_recorder_stop(), packet_sink close or recording failure
     bool stopped;
+    // toggled by MOD+Shift+p
+    bool paused;
     struct sc_recorder_queue video_queue;
     struct sc_recorder_queue audio_queue;
 
@@ -86,6 +88,10 @@ sc_recorder_init(struct sc_recorder *recorder, const char *filename,
 
 bool
 sc_recorder_start(struct sc_recorder *recorder);
+
+// Pause or resume the recording (packets are dropped while paused)
+void
+sc_recorder_toggle_paused(struct sc_recorder *recorder);
 
 void
 sc_recorder_stop(struct sc_recorder *recorder);

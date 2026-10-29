@@ -1487,6 +1487,10 @@ static const struct sc_shortcut shortcuts[] = {
         .text = "Reset video capture/encoding",
     },
     {
+        .shortcuts = { "MOD+Shift+p" },
+        .text = "Pause or resume the recording (--record)",
+    },
+    {
         .shortcuts = { "MOD+g" },
         .text = "Resize window to 1:1 (pixel-perfect)",
     },

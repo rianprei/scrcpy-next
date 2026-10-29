@@ -29,6 +29,7 @@ sc_input_manager_init(struct sc_input_manager *im,
 
     im->controller = params->controller;
     im->fp = params->fp;
+    im->recorder = params->recorder;
     im->screen = params->screen;
     im->kp = params->kp;
     im->mp = params->mp;
@@ -796,6 +797,15 @@ sc_input_manager_process_key(struct sc_input_manager *im,
             case SDLK_Q:
                 sc_push_event(SDL_EVENT_QUIT);
                 return;
+            case SDLK_P:
+                // MOD+p (without shift) is power, handled below
+                if (shift) {
+                    if (im->recorder && !repeat && down) {
+                        sc_recorder_toggle_paused(im->recorder);
+                    }
+                    return;
+                }
+                break;
         }
 
         if (disconnected) {
