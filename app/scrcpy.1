@@ -386,6 +386,12 @@ Print per-stage latency statistics once per second ("LAT" lines): recv->apply (d
 The server also prints one "ENC capture->out" line per second (p50/p95/p99/max delay between the capture of a frame and its output by the encoder, on the device clock). They do not include the scanout on the device or the computer.
 
 .TP
+.BI "\-\-latency\-probe" [=x,y]
+Measure the round-trip latency: every second, inject a touch at the position x,y (relative to the device screen, in [0; 1], 0.5,0.5 by default) with "pointer location" enabled (restored on exit), and print the delay until the touch is drawn in a decoded frame (control, capture, encoding, transport and decoding), with a summary every 10 measurements and on exit.
+
+The touch must hit a static area where it does nothing (for example an empty area of the home screen).
+
+.TP
 .B \-\-legacy\-paste
 Inject computer clipboard text as a sequence of key events on Ctrl+v (like MOD+Shift+v).
 

@@ -24,6 +24,7 @@
 #include "hwdec.h"
 #include "icon.h"
 #include "keyboard_sdk.h"
+#include "latency_probe.h"
 #include "latency_stats.h"
 #include "mouse_sdk.h"
 #include "keymap.h"
@@ -88,6 +89,7 @@ struct sc_reconnect_view {
 struct scrcpy {
     struct sc_server server;
     struct sc_screen screen;
+    struct sc_latency_probe latency_probe;
     struct sc_audio_player audio_player;
     struct sc_demuxer video_demuxer;
     struct sc_demuxer audio_demuxer;
@@ -501,6 +503,8 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
     bool controller_initialized = false;
     bool controller_started = false;
     bool latency_stats_initialized = false;
+    bool latency_probe_initialized = false;
+    bool latency_probe_started = false;
     bool screen_initialized = false;
     bool timeout_initialized = false;
     bool timeout_started = false;
@@ -563,6 +567,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
         .audio_dup = options->audio_dup,
         .audio_match_packages = options->audio_match_packages,
         .show_touches = options->show_touches,
+        .pointer_location = options->latency_probe,
         .stay_awake = options->stay_awake,
         .video_codec_options = options->video_codec_options,
         .audio_codec_options = options->audio_codec_options,
@@ -1118,6 +1123,19 @@ aoa_complete:
         }
 
         sc_frame_source_add_sink(src, &s->screen.frame_sink);
+
+        if (options->latency_probe) {
+            assert(controller);
+            if (!sc_latency_probe_init(&s->latency_probe, controller,
+                                       options->latency_probe_x,
+                                       options->latency_probe_y)) {
+                goto end;
+            }
+            latency_probe_initialized = true;
+            // Directly from the decoder: the rendering is not measured
+            sc_frame_source_add_sink(&s->video_decoder.frame_source,
+                                     &s->latency_probe.frame_sink);
+        }
     }
 
     if (options->audio_playback) {
@@ -1161,6 +1179,13 @@ aoa_complete:
 
     // Now that the header values have been consumed, the socket(s) will
     // receive the stream(s). Start the demuxer(s).
+
+    if (latency_probe_initialized) {
+        if (!sc_latency_probe_start(&s->latency_probe)) {
+            goto end;
+        }
+        latency_probe_started = true;
+    }
 
     if (options->latency_stats) {
         if (!sc_latency_stats_init()) {
@@ -1286,6 +1311,11 @@ end:
         sc_usb_stop(&s->usb);
     }
 #endif
+    if (latency_probe_started) {
+        // Before the controller: the probe releases its touch on stop
+        sc_latency_probe_stop(&s->latency_probe);
+        sc_latency_probe_join(&s->latency_probe);
+    }
     if (controller_started) {
         atomic_store(&s->controller_running, false);
         sc_controller_stop(&s->controller);
@@ -1432,6 +1462,12 @@ end:
     if (screen_initialized) {
         sc_screen_join(&s->screen);
         sc_screen_destroy(&s->screen);
+    }
+
+    // The decoder is joined (with the video demuxer): it no longer pushes
+    // frames to the probe
+    if (latency_probe_initialized) {
+        sc_latency_probe_destroy(&s->latency_probe);
     }
 
     if (latency_stats_initialized) {

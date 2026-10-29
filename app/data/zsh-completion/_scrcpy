@@ -64,6 +64,7 @@ arguments=(
     '--keyboard=[Set the keyboard input mode]:mode:(disabled sdk uhid aoa)'
     '--keyboard-grab=[Set when to grab the host keyboard]:mode:(disabled fullscreen)'
     '--kill-adb-on-close[Kill adb when scrcpy terminates]'
+    '--latency-probe=[Measure the round-trip latency with injected touches]'
     '--latency-stats[Print per-stage latency statistics once per second]'
     '--legacy-paste[Inject computer clipboard text as a sequence of key events on Ctrl+v]'
     '--list-apps[List Android apps installed on the device]'

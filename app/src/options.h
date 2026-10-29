@@ -402,6 +402,9 @@ struct scrcpy_options {
     bool cleanup;
     bool start_fps_counter;
     bool latency_stats;
+    bool latency_probe;
+    float latency_probe_x; // normalized position of the probe touch
+    float latency_probe_y;
     bool power_on;
     bool server_push;
     bool video;

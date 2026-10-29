@@ -61,6 +61,17 @@ public final class CleanUp {
             }
         }
 
+        // --latency-probe: unlike "show touches", "pointer location" also draws injected touches
+        boolean disablePointerLocation = false;
+        if (options.getPointerLocation()) {
+            try {
+                String oldValue = Settings.getAndPutValue(Settings.TABLE_SYSTEM, "pointer_location", "1");
+                disablePointerLocation = !"1".equals(oldValue);
+            } catch (SettingsException e) {
+                Ln.e("Could not change \"pointer_location\"", e);
+            }
+        }
+
         int restoreStayOn = -1;
         if (options.getStayAwake()) {
             int stayOn = BatteryManager.BATTERY_PLUGGED_AC | BatteryManager.BATTERY_PLUGGED_USB | BatteryManager.BATTERY_PLUGGED_WIRELESS;
@@ -117,14 +128,14 @@ public final class CleanUp {
 
         try {
             run(displayId, restoreStayOn, disableShowTouches, powerOffScreen, restoreScreenOffTimeout, restoreDisplayImePolicy,
-                    options.getKeepServer());
+                    options.getKeepServer(), disablePointerLocation);
         } catch (IOException e) {
             Ln.e("Clean up I/O exception", e);
         }
     }
 
     private void run(int displayId, int restoreStayOn, boolean disableShowTouches, boolean powerOffScreen, int restoreScreenOffTimeout,
-            int restoreDisplayImePolicy, boolean keepServer) throws IOException {
+            int restoreDisplayImePolicy, boolean keepServer, boolean disablePointerLocation) throws IOException {
         String[] cmd = {
                 "app_process",
                 "/",
@@ -136,6 +147,7 @@ public final class CleanUp {
                 String.valueOf(restoreScreenOffTimeout),
                 String.valueOf(restoreDisplayImePolicy),
                 String.valueOf(keepServer),
+                String.valueOf(disablePointerLocation),
         };
 
         ProcessBuilder builder = new ProcessBuilder(cmd);
@@ -209,6 +221,7 @@ public final class CleanUp {
         boolean powerOffScreen = Boolean.parseBoolean(args[3]);
         int restoreScreenOffTimeout = Integer.parseInt(args[4]);
         int restoreDisplayImePolicy = Integer.parseInt(args[5]);
+        boolean disablePointerLocation = Boolean.parseBoolean(args[7]);
 
         // Dynamic option
         boolean restoreDisplayPower = false;
@@ -233,6 +246,15 @@ public final class CleanUp {
                 Settings.putValue(Settings.TABLE_SYSTEM, "show_touches", "0");
             } catch (SettingsException e) {
                 Ln.e("Could not restore \"show_touches\"", e);
+            }
+        }
+
+        if (disablePointerLocation) {
+            Ln.i("Disabling \"pointer location\"");
+            try {
+                Settings.putValue(Settings.TABLE_SYSTEM, "pointer_location", "0");
+            } catch (SettingsException e) {
+                Ln.e("Could not restore \"pointer_location\"", e);
             }
         }
 

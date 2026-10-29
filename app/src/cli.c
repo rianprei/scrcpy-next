@@ -71,6 +71,7 @@ enum {
     OPT_NO_CLEANUP,
     OPT_PRINT_FPS,
     OPT_LATENCY_STATS,
+    OPT_LATENCY_PROBE,
     OPT_NO_POWER_ON,
     OPT_NO_SERVER_PUSH,
     OPT_VIDEO_CODEC,
@@ -1071,6 +1072,21 @@ static const struct sc_option options[] = {
                 "on the device monotonic clock",
     },
     {
+        .longopt_id = OPT_LATENCY_PROBE,
+        .longopt = "latency-probe",
+        .argdesc = "x,y",
+        .optional_arg = true,
+        .text = "Measure the round-trip latency: every second, inject a touch "
+                "at the position x,y (relative to the device screen, in "
+                "[0; 1], 0.5,0.5 by default) with \"pointer location\" "
+                "enabled (restored on exit), and print the delay until the "
+                "touch is drawn in a decoded frame (control, capture, "
+                "encoding, transport and decoding), with a summary every 10 "
+                "measurements and on exit.\n"
+                "The touch must hit a static area where it does nothing (for "
+                "example an empty area of the home screen).",
+    },
+    {
         .longopt_id = OPT_PUSH_TARGET,
         .longopt = "push-target",
         .argdesc = "path",
@@ -2053,6 +2069,28 @@ scrcpy_print_usage(const char *arg0) {
     for (size_t i = 0; i < ARRAY_LEN(exit_statuses); ++i) {
         print_exit_status(&exit_statuses[i], cols);
     }
+}
+
+static bool
+parse_latency_probe_position(const char *s, float *x, float *y) {
+    char *end;
+    float vx = strtof(s, &end);
+    if (end == s || *end != ',') {
+        goto error;
+    }
+    const char *ys = end + 1;
+    float vy = strtof(ys, &end);
+    if (end == ys || *end != '\0'
+            || !(vx >= 0 && vx <= 1) || !(vy >= 0 && vy <= 1)) {
+        goto error;
+    }
+    *x = vx;
+    *y = vy;
+    return true;
+
+error:
+    LOGE("Invalid latency probe position: \"%s\" (expected x,y in [0; 1])", s);
+    return false;
 }
 
 static bool
@@ -3484,6 +3522,14 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_LATENCY_STATS:
                 opts->latency_stats = true;
                 break;
+            case OPT_LATENCY_PROBE:
+                opts->latency_probe = true;
+                if (optarg && !parse_latency_probe_position(optarg,
+                                                    &opts->latency_probe_x,
+                                                    &opts->latency_probe_y)) {
+                    return false;
+                }
+                break;
             case OPT_VIDEO_CODEC:
                 if (!parse_video_codec(optarg, &opts->video_codec)) {
                     return false;
@@ -4440,6 +4486,13 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     if (opts->start_fps_counter && !opts->video_playback) {
         LOGW("--print-fps has no effect without video playback");
         opts->start_fps_counter = false;
+    }
+
+    if (opts->latency_probe && (!opts->video_playback || !opts->control
+            || opts->video_source != SC_VIDEO_SOURCE_DISPLAY)) {
+        LOGE("--latency-probe requires video playback and control of a "
+             "display");
+        return false;
     }
 
     if (opts->latency_stats && !opts->video_playback) {

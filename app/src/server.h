@@ -69,6 +69,7 @@ struct sc_server_params {
     bool audio_dup;
     const char *audio_match_packages;
     bool show_touches;
+    bool pointer_location; // --latency-probe
     bool stay_awake;
     bool force_adb_forward;
     bool power_off_on_close;

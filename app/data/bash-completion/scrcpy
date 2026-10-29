@@ -58,6 +58,7 @@ _scrcpy() {
         --keyboard-grab=
         --kill-adb-on-close
         --latency-stats
+        --latency-probe
         --legacy-paste
         --list-apps
         --list-camera-sizes

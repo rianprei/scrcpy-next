@@ -62,6 +62,7 @@ public class Options {
     private boolean cameraOis;
     private boolean cameraEis;
     private boolean showTouches;
+    private boolean pointerLocation;
     private boolean stayAwake;
     private int screenOffTimeout = -1;
     private int displayImePolicy = -1;
@@ -262,6 +263,10 @@ public class Options {
 
     public boolean getShowTouches() {
         return showTouches;
+    }
+
+    public boolean getPointerLocation() {
+        return pointerLocation;
     }
 
     public boolean getStayAwake() {
@@ -523,6 +528,9 @@ public class Options {
                     break;
                 case "show_touches":
                     options.showTouches = Boolean.parseBoolean(value);
+                    break;
+                case "pointer_location":
+                    options.pointerLocation = Boolean.parseBoolean(value);
                     break;
                 case "stay_awake":
                     options.stayAwake = Boolean.parseBoolean(value);

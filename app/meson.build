@@ -27,6 +27,8 @@ src = [
     'src/keymap.c',
     'src/keyboard_shortcuts.c',
     'src/keyboard_sdk.c',
+    'src/latency_probe.c',
+    'src/latency_probe_calc.c',
     'src/latency_stats.c',
     'src/mouse_capture.c',
     'src/mouse_sdk.c',
@@ -384,6 +386,10 @@ if get_option('buildtype') == 'debug'
         ['test_strbuf', [
             'tests/test_strbuf.c',
             'src/util/strbuf.c',
+        ]],
+        ['test_latency_probe', [
+            'tests/test_latency_probe.c',
+            'src/latency_probe_calc.c',
         ]],
         ['test_str', [
             'tests/test_str.c',

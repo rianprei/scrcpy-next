@@ -354,6 +354,43 @@ static void test_profile(void) {
     assert(args.opts.max_size == 1200);
 }
 
+static void test_latency_probe(void) {
+    struct scrcpy_cli_args args = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv[] = {"scrcpy", "--latency-probe=0.25,1"};
+    assert(scrcpy_parse_args(&args, ARRAY_LEN(argv), argv));
+    assert(args.opts.latency_probe);
+    assert(args.opts.latency_probe_x == 0.25f);
+    assert(args.opts.latency_probe_y == 1.0f);
+
+    struct scrcpy_cli_args args2 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv2[] = {"scrcpy", "--latency-probe"};
+    assert(scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
+    assert(args2.opts.latency_probe_x == 0.5f);
+
+    char *bad[][2] = {
+        {"scrcpy", "--latency-probe=0.5"},
+        {"scrcpy", "--latency-probe=0.5,1.5"},
+        {"scrcpy", "--latency-probe=x,0.5"},
+        {"scrcpy", "--latency-probe=0.5,0.5,"},
+    };
+    for (size_t i = 0; i < ARRAY_LEN(bad); ++i) {
+        struct scrcpy_cli_args a = {
+            .opts = scrcpy_options_default,
+        };
+        assert(!scrcpy_parse_args(&a, 2, bad[i]));
+    }
+
+    struct scrcpy_cli_args args3 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv3[] = {"scrcpy", "--latency-probe", "--no-control"};
+    assert(!scrcpy_parse_args(&args3, ARRAY_LEN(argv3), argv3));
+}
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -365,6 +402,7 @@ int main(int argc, char *argv[]) {
     test_camera_focus();
     test_mouse_bind_info();
     test_show_axis();
+    test_latency_probe();
     test_parse_shortcut_mods();
     test_preparse();
     test_profile();
