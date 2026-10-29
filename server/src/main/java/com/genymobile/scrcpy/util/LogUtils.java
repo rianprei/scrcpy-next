@@ -188,6 +188,12 @@ public final class LogUtils {
 
                     builder.append(')');
 
+                    if (Build.VERSION.SDK_INT >= AndroidVersions.API_28_ANDROID_9) {
+                        for (String physicalId : characteristics.getPhysicalCameraIds()) {
+                            builder.append("\n        physical camera: --camera-id=").append(physicalId);
+                        }
+                    }
+
                     if (includeSizes) {
                         StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 

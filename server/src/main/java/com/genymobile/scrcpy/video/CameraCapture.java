@@ -89,7 +89,8 @@ public class CameraCapture extends SurfaceCapture {
 
     private VideoConstraints videoConstraints;
 
-    private String cameraId;
+    private String cameraId; // the camera to open (a logical camera if physicalCameraId is set)
+    private String physicalCameraId; // optional physical camera of the logical camera cameraId
     private Size captureSize;
     private Size videoSize; // after OpenGL transforms
     private Range<Float> zoomRange;
@@ -145,12 +146,18 @@ public class CameraCapture extends SurfaceCapture {
         cameraExecutor = new HandlerExecutor(cameraHandler);
 
         try {
-            cameraId = selectCamera(explicitCameraId, cameraFacing);
-            if (cameraId == null) {
+            String[] ids = selectCamera(explicitCameraId, cameraFacing);
+            if (ids == null) {
                 throw new ConfigurationException("No matching camera found");
             }
+            cameraId = ids[0];
+            physicalCameraId = ids[1];
 
-            Ln.i("Using camera '" + cameraId + "'");
+            if (physicalCameraId != null) {
+                Ln.i("Using physical camera '" + physicalCameraId + "' of logical camera '" + cameraId + "'");
+            } else {
+                Ln.i("Using camera '" + cameraId + "'");
+            }
             int attempts = 1;
             if (Build.VERSION.SDK_INT == AndroidVersions.API_30_ANDROID_11) {
                 // On Android 11, the camera service only serves clients it considers foreground;
@@ -179,7 +186,8 @@ public class CameraCapture extends SurfaceCapture {
     public void prepare() throws IOException {
         try {
             int maxSize = videoConstraints.getMaxSize();
-            captureSize = selectSize(cameraId, explicitSize, maxSize, aspectRatio, highSpeed);
+            // A physical camera may not support all the sizes of its logical camera
+            captureSize = selectSize(getLensCameraId(), explicitSize, maxSize, aspectRatio, highSpeed);
             if (captureSize == null) {
                 throw new IOException("Could not select camera size");
             }
@@ -209,21 +217,40 @@ public class CameraCapture extends SurfaceCapture {
         }
     }
 
-    private static String selectCamera(String explicitCameraId, CameraFacing cameraFacing) throws CameraAccessException, ConfigurationException {
+    /**
+     * The camera whose lens characteristics apply (the physical camera, if any).
+     */
+    private String getLensCameraId() {
+        return physicalCameraId != null ? physicalCameraId : cameraId;
+    }
+
+    /**
+     * Return {cameraId, physicalCameraId}: an explicit id may be a physical camera of a logical multi-camera, which
+     * must be opened through its logical camera. Return null if no camera matches.
+     */
+    private static String[] selectCamera(String explicitCameraId, CameraFacing cameraFacing) throws CameraAccessException, ConfigurationException {
         CameraManager cameraManager = ServiceManager.getCameraManager();
 
         String[] cameraIds = cameraManager.getCameraIdList();
         if (explicitCameraId != null) {
-            if (!Arrays.asList(cameraIds).contains(explicitCameraId)) {
-                Ln.e("Camera with id " + explicitCameraId + " not found\n" + LogUtils.buildCameraListMessage(false));
-                throw new ConfigurationException("Camera id not found");
+            if (Arrays.asList(cameraIds).contains(explicitCameraId)) {
+                return new String[] {explicitCameraId, null};
             }
-            return explicitCameraId;
+            if (Build.VERSION.SDK_INT >= AndroidVersions.API_28_ANDROID_9) {
+                for (String cameraId : cameraIds) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    if (characteristics.getPhysicalCameraIds().contains(explicitCameraId)) {
+                        return new String[] {cameraId, explicitCameraId};
+                    }
+                }
+            }
+            Ln.e("Camera with id " + explicitCameraId + " not found\n" + LogUtils.buildCameraListMessage(false));
+            throw new ConfigurationException("Camera id not found");
         }
 
         if (cameraFacing == null) {
             // Use the first one
-            return cameraIds.length > 0 ? cameraIds[0] : null;
+            return cameraIds.length > 0 ? new String[] {cameraIds[0], null} : null;
         }
 
         for (String cameraId : cameraIds) {
@@ -231,7 +258,7 @@ public class CameraCapture extends SurfaceCapture {
 
             int facing = characteristics.get(CameraCharacteristics.LENS_FACING);
             if (cameraFacing.value() == facing) {
-                return cameraId;
+                return new String[] {cameraId, null};
             }
         }
 
@@ -339,6 +366,9 @@ public class CameraCapture extends SurfaceCapture {
 
         Surface captureSurface = surface;
         OutputConfiguration outputConfig = new OutputConfiguration(captureSurface);
+        if (physicalCameraId != null) {
+            outputConfig.setPhysicalCameraId(physicalCameraId);
+        }
         List<OutputConfiguration> outputs = Collections.singletonList(outputConfig);
         int sessionType = highSpeed ? SessionConfiguration.SESSION_HIGH_SPEED : SessionConfiguration.SESSION_REGULAR;
         SessionConfiguration sessionConfig = new SessionConfiguration(sessionType, outputs, cameraExecutor, new CameraCaptureSession.StateCallback() {
@@ -354,7 +384,8 @@ public class CameraCapture extends SurfaceCapture {
                 try {
                     CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
                     zoomRange = characteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
-                    minFocusDistance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+                    CameraCharacteristics lens = physicalCameraId != null ? cameraManager.getCameraCharacteristics(physicalCameraId) : characteristics;
+                    minFocusDistance = lens.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
                 } catch (CameraAccessException e) {
                     Ln.w("Could not get camera characteristics");
                 }
@@ -534,6 +565,8 @@ public class CameraCapture extends SurfaceCapture {
         return false;
     }
 
+    // Camera mirroring requires Android 11+ (see Server)
+    @TargetApi(AndroidVersions.API_30_ANDROID_11)
     private void configureExposureAndStabilization(CaptureRequest.Builder requestBuilder) throws CameraAccessException {
         if (iso == 0 && Float.isNaN(ev) && !aeLock && !awbLock && !ois && !eis) {
             return;
@@ -544,7 +577,7 @@ public class CameraCapture extends SurfaceCapture {
             return;
         }
 
-        CameraCharacteristics characteristics = ServiceManager.getCameraManager().getCameraCharacteristics(cameraId);
+        CameraCharacteristics characteristics = ServiceManager.getCameraManager().getCameraCharacteristics(getLensCameraId());
 
         if (iso != 0) {
             int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
@@ -622,7 +655,7 @@ public class CameraCapture extends SurfaceCapture {
         }
 
         CameraManager cameraManager = ServiceManager.getCameraManager();
-        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(getLensCameraId());
 
         int[] afModes = characteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
         boolean afOffSupported = false;
