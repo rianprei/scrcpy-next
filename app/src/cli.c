@@ -133,6 +133,7 @@ enum {
     OPT_DISPLAY_IME_POLICY,
     OPT_CAMERA_TORCH,
     OPT_CAMERA_ZOOM,
+    OPT_CAMERA_PIP,
     OPT_MIN_SIZE_ALIGNMENT,
     OPT_NO_WINDOW_ASPECT_RATIO_LOCK,
     OPT_NO_WINDOW_AUTO_RESIZE,
@@ -437,6 +438,18 @@ static const struct sc_option options[] = {
         .longopt = "camera-zoom",
         .argdesc = "zoom",
         .text = "Specify the camera zoom initial value.",
+    },
+    {
+        .longopt_id = OPT_CAMERA_PIP,
+        .longopt = "camera-pip",
+        .text = "Draw a device camera over the bottom-right corner of the "
+                "mirrored display (picture-in-picture), for example to "
+                "record the screen with the face of the user.\n"
+                "The camera is selected and configured by the --camera-* "
+                "options (its size is limited to 640 pixels unless "
+                "--camera-size is set).\n"
+                "Only available with --video-source=display (without "
+                "--new-display), on Android >= 11.",
     },
     {
         .longopt_id = OPT_CAPTURE_ORIENTATION,
@@ -3642,6 +3655,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_CAMERA_TORCH:
                 opts->camera_torch = true;
                 break;
+            case OPT_CAMERA_PIP:
+                opts->camera_pip = true;
+                break;
             case OPT_CAMERA_ZOOM:
                 opts->camera_zoom = optarg;
                 break;
@@ -4122,6 +4138,15 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             opts->keyboard_input_mode = SC_KEYBOARD_INPUT_MODE_DISABLED;
             opts->mouse_input_mode = SC_MOUSE_INPUT_MODE_DISABLED;
             opts->gamepad_input_mode = SC_GAMEPAD_INPUT_MODE_DISABLED;
+        }
+    } else if (opts->camera_pip) {
+        if (opts->new_display) {
+            LOGE("--camera-pip is not available with --new-display");
+            return false;
+        }
+        if (opts->camera_id && opts->camera_facing != SC_CAMERA_FACING_ANY) {
+            LOGE("Cannot specify both --camera-id and --camera-facing");
+            return false;
         }
     } else if (opts->camera_id
             || opts->camera_ar

@@ -32,6 +32,7 @@ _scrcpy() {
         --camera-size=
         --camera-torch
         --camera-zoom=
+        --camera-pip
         --capture-orientation=
         --client-audio-source=
         --clipboard-image

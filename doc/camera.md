@@ -218,6 +218,25 @@ steps between infinity and the closest focus distance of the lens (this
 disables autofocus). <kbd>MOD</kbd>+<kbd>Home</kbd> restores autofocus.
 
 
+## Picture-in-picture
+
+To draw a camera over the bottom-right corner of the mirrored display (for
+example to record the screen with your face), keep the display as the video
+source and add `--camera-pip`:
+
+```bash
+scrcpy --camera-pip --camera-facing=front
+scrcpy --camera-pip --camera-facing=front --record=file.mp4
+```
+
+The camera is selected and configured by the same `--camera-*` options. It is
+shown like a camera preview (upright, mirrored for a front camera), and its
+size is limited to 640 pixels unless `--camera-size` is set.
+
+This requires Android 11 or later (like camera mirroring), and is not available
+with `--new-display`.
+
+
 ## Webcam
 
 Combined with the [V4L2](v4l2.md) feature on Linux, the Android device camera

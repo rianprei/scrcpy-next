@@ -39,6 +39,7 @@ arguments=(
     '--camera-size=[Specify an explicit camera capture size]'
     '--camera-torch[Turn on the camera torch when the camera starts]'
     '--camera-zoom[Specify the camera zoom initial value]'
+    '--camera-pip[Draw a device camera over the mirrored display]'
     '--capture-orientation=[Set the capture video orientation]:orientation:(0 90 180 270 flip0 flip90 flip180 flip270 @0 @90 @180 @270 @flip0 @flip90 @flip180 @flip270)'
     '--client-audio-source=[Inject audio captured on the computer into the device microphone]'
     '--clipboard-image[Copy and paste images through the device clipboard]'

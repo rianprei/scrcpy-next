@@ -598,6 +598,7 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
         .camera_high_speed = options->camera_high_speed,
         .camera_torch = options->camera_torch,
         .camera_zoom = options->camera_zoom,
+        .camera_pip = options->camera_pip,
         .camera_no_autofocus = options->camera_no_autofocus,
         .vd_destroy_content = options->vd_destroy_content,
         .vd_system_decorations = options->vd_system_decorations,

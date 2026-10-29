@@ -50,6 +50,12 @@ public class ScreenCapture extends SurfaceCapture {
     private AffineMatrix transform;
     private OpenGLRunner glRunner;
 
+    // --camera-pip: the camera drawn over the screen, at the bottom-right corner
+    private static final int PIP_CAMERA_MAX_SIZE = 640;
+    private final CameraCapture pipCamera;
+    private AffineMatrix pipTransform; // shows the camera like a preview
+    private Size pipSize;
+
     public ScreenCapture(VirtualDisplayListener vdListener, Options options) {
         this.vdListener = vdListener;
         this.displayId = options.getDisplayId();
@@ -60,16 +66,21 @@ public class ScreenCapture extends SurfaceCapture {
         assert captureOrientationLock != null;
         assert captureOrientation != null;
         this.angle = options.getAngle();
+        this.pipCamera = options.getCameraPip() ? new CameraCapture(options, true) : null;
     }
 
     @Override
-    public void init(VideoConstraints videoConstraints) {
+    public void init(VideoConstraints videoConstraints) throws ConfigurationException, IOException {
         this.videoConstraints = videoConstraints;
         displayMonitor.start(displayId, (props) -> getCaptureControl().reset(CaptureControl.RESET_REASON_DISPLAY_PROPERTIES_CHANGED));
+        if (pipCamera != null) {
+            // A camera error must not stop the screen capture: give it its own capture control (the overlay just freezes)
+            pipCamera.init(new CaptureControl(), new VideoConstraints(PIP_CAMERA_MAX_SIZE, 1, null));
+        }
     }
 
     @Override
-    public void prepare() throws ConfigurationException {
+    public void prepare() throws ConfigurationException, IOException {
         displayInfo = ServiceManager.getDisplayManager().getDisplayInfo(displayId);
         if (displayInfo == null) {
             Ln.e("Display " + displayId + " not found\n" + LogUtils.buildDisplayListMessage());
@@ -103,6 +114,30 @@ public class ScreenCapture extends SurfaceCapture {
 
         transform = filter.getInverseTransform();
         videoSize = filter.getOutputSize().constrain(videoConstraints);
+
+        if (pipCamera != null) {
+            pipCamera.prepare();
+            VideoFilter pipFilter = new VideoFilter(pipCamera.getSize());
+            pipFilter.addOrientation(pipCamera.getPreviewOrientation(displayRotation));
+            pipTransform = pipFilter.getInverseTransform();
+            if (pipTransform == null) {
+                pipTransform = AffineMatrix.IDENTITY;
+            }
+            pipSize = pipFilter.getOutputSize();
+            if (transform == null) {
+                // The overlay is drawn by OpenGL
+                transform = AffineMatrix.IDENTITY;
+            }
+        }
+    }
+
+    // The camera rectangle in the video, in OpenGL coordinates: x, y (from the bottom-left corner), width, height
+    private static int[] computePipViewport(Size video, Size camera) {
+        int min = Math.min(video.getWidth(), video.getHeight());
+        int width = min * 3 / 10;
+        int height = width * camera.getHeight() / camera.getWidth();
+        int margin = min / 40;
+        return new int[] {video.getWidth() - margin - width, margin, width, height};
     }
 
     @Override
@@ -124,6 +159,11 @@ public class ScreenCapture extends SurfaceCapture {
             OpenGLFilter glFilter = new AffineOpenGLFilter(transform);
             glRunner = new OpenGLRunner(glFilter);
             surface = glRunner.start(inputSize, videoSize, surface);
+            if (pipCamera != null) {
+                int[] viewport = computePipViewport(videoSize, pipSize);
+                Surface cameraSurface = glRunner.startOverlay(pipCamera.getSize(), CameraCapture.VFLIP_MATRIX, pipTransform, viewport);
+                pipCamera.start(cameraSurface);
+            }
         } else {
             // If there is no filter, the display must be rendered at target video size directly
             inputSize = videoSize;
@@ -177,6 +217,9 @@ public class ScreenCapture extends SurfaceCapture {
 
     @Override
     public void stop() {
+        if (pipCamera != null) {
+            pipCamera.stop();
+        }
         if (glRunner != null) {
             glRunner.stopAndRelease();
             glRunner = null;
@@ -186,6 +229,9 @@ public class ScreenCapture extends SurfaceCapture {
     @Override
     public void release() {
         displayMonitor.stopAndRelease();
+        if (pipCamera != null) {
+            pipCamera.release();
+        }
 
         if (display != null) {
             SurfaceControl.destroyDisplay(display);

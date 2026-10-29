@@ -20,6 +20,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .camera_size = NULL,
     .camera_ar = NULL,
     .camera_zoom = NULL,
+    .camera_pip = false,
     .camera_focus_distance = NULL,
     .camera_iso = 0,
     .camera_exposure_us = 0,

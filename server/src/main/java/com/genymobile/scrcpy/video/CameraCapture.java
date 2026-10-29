@@ -86,6 +86,8 @@ public class CameraCapture extends SurfaceCapture {
     private final boolean ois;
     private final boolean eis;
     private float zoom;
+    // --camera-pip: the camera is drawn over the screen capture, at its capture size (no filter)
+    private final boolean overlay;
 
     private VideoConstraints videoConstraints;
 
@@ -113,16 +115,22 @@ public class CameraCapture extends SurfaceCapture {
     private CameraCaptureSession currentSession;
 
     public CameraCapture(Options options) {
+        this(options, false);
+    }
+
+    public CameraCapture(Options options, boolean overlay) {
+        this.overlay = overlay;
         this.explicitCameraId = options.getCameraId();
         this.cameraFacing = options.getCameraFacing();
         this.explicitSize = options.getCameraSize();
         this.aspectRatio = options.getCameraAspectRatio();
         this.fps = options.getCameraFps();
         this.highSpeed = options.getCameraHighSpeed();
-        this.crop = options.getCrop();
-        this.captureOrientation = options.getCaptureOrientation();
+        // In overlay mode, the crop, orientation and angle options apply to the screen
+        this.crop = overlay ? null : options.getCrop();
+        this.captureOrientation = overlay ? Orientation.Orient0 : options.getCaptureOrientation();
         assert captureOrientation != null;
-        this.angle = options.getAngle();
+        this.angle = overlay ? 0 : options.getAngle();
         this.initialTorch = options.getCameraTorch();
         this.noAutofocus = options.getCameraNoAutofocus();
         this.focusDistance = options.getCameraFocusDistance();
@@ -148,6 +156,7 @@ public class CameraCapture extends SurfaceCapture {
         try {
             String[] ids = selectCamera(explicitCameraId, cameraFacing);
             if (ids == null) {
+                Ln.e("No matching camera found");
                 throw new ConfigurationException("No matching camera found");
             }
             cameraId = ids[0];
@@ -208,6 +217,12 @@ public class CameraCapture extends SurfaceCapture {
         filter.addAngle(angle);
 
         transform = filter.getInverseTransform();
+        if (overlay) {
+            // Rendered on an overlay texture, whatever its size
+            assert transform == null;
+            videoSize = captureSize;
+            return;
+        }
         videoSize = filter.getOutputSize().align(videoConstraints.getAlignment());
 
         if (!videoSize.equals(captureSize) && transform == null) {
@@ -215,6 +230,30 @@ public class CameraCapture extends SurfaceCapture {
             // If the video constraints change the size, an intermediate OpenGL filter is required.
             transform = AffineMatrix.IDENTITY;
         }
+    }
+
+    /**
+     * Return the orientation to apply to the camera image to show it like a camera preview (upright, and mirrored for a front camera) on a
+     * display with the given rotation (Display.getRotation()), see android.hardware.Camera.setDisplayOrientation().
+     */
+    public Orientation getPreviewOrientation(int displayRotation) throws IOException {
+        CameraCharacteristics characteristics;
+        try {
+            characteristics = ServiceManager.getCameraManager().getCameraCharacteristics(getLensCameraId());
+        } catch (CameraAccessException e) {
+            throw new IOException(e);
+        }
+        Integer sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+        int sensor = sensorOrientation != null ? sensorOrientation : 0;
+        int degrees = displayRotation * 90;
+        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+            // Flipping before a rotation by -θ is the same as flipping after a rotation by θ
+            int cw = (360 - (sensor + degrees) % 360) % 360;
+            return Orientation.values()[4 + cw / 90]; // flip<cw>
+        }
+        int cw = (sensor - degrees + 360) % 360;
+        return Orientation.values()[cw / 90];
     }
 
     /**

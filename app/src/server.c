@@ -408,6 +408,9 @@ execute_server(struct sc_server *server,
         VALIDATE_STRING(params->camera_zoom);
         ADD_PARAM("camera_zoom=%s", params->camera_zoom);
     }
+    if (params->camera_pip) {
+        ADD_PARAM("camera_pip=true");
+    }
     if (params->camera_no_autofocus) {
         ADD_PARAM("camera_no_autofocus=true");
     }

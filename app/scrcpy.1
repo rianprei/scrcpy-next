@@ -197,6 +197,14 @@ Turn on the camera torch when the camera starts.
 Specify the camera zoom initial value.
 
 .TP
+.B \-\-camera\-pip
+Draw a device camera over the bottom-right corner of the mirrored display (picture-in-picture), for example to record the screen with the face of the user.
+
+The camera is selected and configured by the \-\-camera\-* options (its size is limited to 640 pixels unless \fB\-\-camera\-size\fR is set).
+
+Only available with \fB\-\-video\-source=display\fR (without \fB\-\-new\-display\fR), on Android >= 11.
+
+.TP
 .BI "\-\-capture\-orientation " value
 Possible values are 0, 90, 180, 270, flip0, flip90, flip180 and flip270, possibly prefixed by '@'.
 

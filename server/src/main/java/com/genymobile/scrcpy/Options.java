@@ -74,6 +74,7 @@ public class Options {
     private boolean clipboardAutosync = true;
     private boolean mediaControl;
     private boolean clipboardImage;
+    private boolean cameraPip;
     private boolean downsizeOnError = true;
     private boolean cleanup = true;
     private boolean keepServer;
@@ -305,6 +306,10 @@ public class Options {
 
     public boolean getClipboardImage() {
         return clipboardImage;
+    }
+
+    public boolean getCameraPip() {
+        return cameraPip;
     }
 
     public boolean getDownsizeOnError() {
@@ -555,6 +560,9 @@ public class Options {
                     break;
                 case "clipboard_image":
                     options.clipboardImage = Boolean.parseBoolean(value);
+                    break;
+                case "camera_pip":
+                    options.cameraPip = Boolean.parseBoolean(value);
                     break;
                 case "downsize_on_error":
                     options.downsizeOnError = Boolean.parseBoolean(value);

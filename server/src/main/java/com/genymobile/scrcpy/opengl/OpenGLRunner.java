@@ -1,6 +1,7 @@
 package com.genymobile.scrcpy.opengl;
 
 import com.genymobile.scrcpy.model.Size;
+import com.genymobile.scrcpy.util.AffineMatrix;
 import com.genymobile.scrcpy.util.Threads;
 
 import android.graphics.SurfaceTexture;
@@ -34,6 +35,16 @@ public final class OpenGLRunner {
     private SurfaceTexture surfaceTexture;
     private Surface inputSurface;
     private int textureId;
+    private Size outputSize;
+
+    // Optional overlay (--camera-pip): a second input drawn over the first one, in a rectangle of the output
+    private SurfaceTexture overlaySurfaceTexture;
+    private Surface overlayInputSurface;
+    private int overlayTextureId;
+    private OpenGLFilter overlayFilter;
+    private float[] overlayTransformMatrix;
+    private int[] overlayViewport; // x, y (from the bottom-left corner), width, height
+    private boolean overlayAvailable;
 
     private boolean stopped;
 
@@ -89,7 +100,68 @@ public final class OpenGLRunner {
         return inputSurface;
     }
 
+    /**
+     * Add an overlay input, drawn over the main input in a rectangle of the output (to call after {@link #start(Size, Size, Surface)}).
+     *
+     * @param inputSize the overlay input size
+     * @param transformMatrix the texture transform matrix of the overlay input
+     * @param transform the transform to apply to the overlay input
+     * @param viewport the rectangle of the output: x, y (from the bottom-left corner), width, height
+     * @return the surface to render the overlay input to
+     */
+    public Surface startOverlay(Size inputSize, float[] transformMatrix, AffineMatrix transform, int[] viewport) throws OpenGLException {
+        try {
+            Threads.executeSynchronouslyOn(handler, new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    overlayTransformMatrix = transformMatrix;
+                    overlayViewport = viewport;
+                    overlayTextureId = createExternalTexture();
+                    overlaySurfaceTexture = new SurfaceTexture(overlayTextureId);
+                    overlaySurfaceTexture.setDefaultBufferSize(inputSize.getWidth(), inputSize.getHeight());
+                    overlayInputSurface = new Surface(overlaySurfaceTexture);
+                    overlayFilter = new AffineOpenGLFilter(transform);
+                    overlayFilter.init();
+                    overlaySurfaceTexture.setOnFrameAvailableListener(st -> {
+                        if (stopped) {
+                            return;
+                        }
+                        overlaySurfaceTexture.updateTexImage();
+                        overlayAvailable = true;
+                        // Render even if the main input does not change
+                        render();
+                    }, handler);
+                    return null;
+                }
+            });
+        } catch (Throwable throwable) {
+            if (throwable instanceof OpenGLException) {
+                throw (OpenGLException) throwable;
+            }
+            throw new OpenGLException("Asynchronous OpenGL overlay init failed", throwable);
+        }
+        return overlayInputSurface;
+    }
+
+    private static int createExternalTexture() throws OpenGLException {
+        int[] textures = new int[1];
+        GLES20.glGenTextures(1, textures, 0);
+        GLUtils.checkGlError();
+
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLUtils.checkGlError();
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLUtils.checkGlError();
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLUtils.checkGlError();
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLUtils.checkGlError();
+        return textures[0];
+    }
+
     private void run(Size inputSize, Size outputSize, Surface outputSurface) throws OpenGLException {
+        this.outputSize = outputSize;
+
         eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
             throw new OpenGLException("Unable to get EGL14 display");
@@ -147,19 +219,7 @@ public final class OpenGLRunner {
             throw new OpenGLException("Failed to make EGL context current");
         }
 
-        int[] textures = new int[1];
-        GLES20.glGenTextures(1, textures, 0);
-        GLUtils.checkGlError();
-        textureId = textures[0];
-
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLUtils.checkGlError();
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLUtils.checkGlError();
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLUtils.checkGlError();
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLUtils.checkGlError();
+        textureId = createExternalTexture();
 
         surfaceTexture = new SurfaceTexture(textureId);
         surfaceTexture.setDefaultBufferSize(inputSize.getWidth(), inputSize.getHeight());
@@ -173,11 +233,11 @@ public final class OpenGLRunner {
                 return;
             }
 
-            render(outputSize);
+            render();
         }, handler);
     }
 
-    private void render(Size outputSize) {
+    private void render() {
         GLES20.glViewport(0, 0, outputSize.getWidth(), outputSize.getHeight());
         GLUtils.checkGlError();
 
@@ -193,7 +253,26 @@ public final class OpenGLRunner {
 
         filter.draw(textureId, matrix);
 
-        EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, surfaceTexture.getTimestamp());
+        long timestamp;
+        if (overlayFilter != null) {
+            if (overlayAvailable) {
+                int[] v = overlayViewport;
+                GLES20.glViewport(v[0], v[1], v[2], v[3]);
+                GLUtils.checkGlError();
+                // The filter clears the color buffer, which ignores the viewport: restrict it to the overlay rectangle
+                GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
+                GLES20.glScissor(v[0], v[1], v[2], v[3]);
+                overlayFilter.draw(overlayTextureId, overlayTransformMatrix);
+                GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
+                GLUtils.checkGlError();
+            }
+            // The overlay frames also trigger a render, and their timestamps may use another clock
+            timestamp = System.nanoTime();
+        } else {
+            timestamp = surfaceTexture.getTimestamp();
+        }
+
+        EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, timestamp);
         EGL14.eglSwapBuffers(eglDisplay, eglSurface);
     }
 
@@ -205,6 +284,15 @@ public final class OpenGLRunner {
             surfaceTexture.setOnFrameAvailableListener(null, handler);
 
             filter.release();
+
+            if (overlayFilter != null) {
+                overlaySurfaceTexture.setOnFrameAvailableListener(null, handler);
+                overlayFilter.release();
+                GLES20.glDeleteTextures(1, new int[] {overlayTextureId}, 0);
+                GLUtils.checkGlError();
+                overlaySurfaceTexture.release();
+                overlayInputSurface.release();
+            }
 
             int[] textures = {textureId};
             GLES20.glDeleteTextures(1, textures, 0);

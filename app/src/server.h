@@ -36,6 +36,7 @@ struct sc_server_params {
     const char *camera_size;
     const char *camera_ar;
     const char *camera_zoom;
+    bool camera_pip;
     const char *camera_focus_distance; // float to be parsed by the server
     uint32_t camera_iso; // 0 for auto
     uint32_t camera_exposure_us; // 0 for auto
