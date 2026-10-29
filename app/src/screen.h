@@ -156,6 +156,7 @@ struct sc_screen_params {
     struct sc_mouse_bindings mouse_bindings;
     bool legacy_paste;
     bool trackpad;
+    bool wheel_pinch;
     sc_tick disconnect_timeout;
     const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;

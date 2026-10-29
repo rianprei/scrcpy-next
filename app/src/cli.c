@@ -51,6 +51,7 @@ enum {
     OPT_TEXT_VIA_CLIPBOARD,
     OPT_CLIENT_AUDIO_SOURCE,
     OPT_TRACKPAD,
+    OPT_WHEEL_PINCH,
     OPT_KEYMAP,
     OPT_VIDEO_ENCODER,
     OPT_VIDEO_DECODER,
@@ -676,6 +677,13 @@ static const struct sc_option options[] = {
                 "direction.\n"
                 "Only available with --mouse=sdk (the default). Mouse wheel "
                 "events are ignored while a two-finger gesture is active.",
+    },
+    {
+        .longopt_id = OPT_WHEEL_PINCH,
+        .longopt = "wheel-pinch",
+        .text = "Turn Ctrl+mouse wheel into a two-finger pinch centered on "
+                "the mouse cursor (wheel up to zoom in), for applications "
+                "which only zoom with a pinch (maps, photos...).",
     },
     {
         .longopt_id = OPT_LEGACY_PASTE,
@@ -3406,6 +3414,9 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_TRACKPAD:
                 opts->trackpad = true;
                 break;
+            case OPT_WHEEL_PINCH:
+                opts->wheel_pinch = true;
+                break;
             case OPT_KEYMAP:
                 opts->keymap = optarg;
                 break;
@@ -4374,6 +4385,10 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
         }
         if (opts->clipboard_image) {
             LOGE("Cannot copy clipboard images if control is disabled");
+            return false;
+        }
+        if (opts->wheel_pinch) {
+            LOGE("Cannot pinch with the mouse wheel if control is disabled");
             return false;
         }
         if (opts->start_app) {

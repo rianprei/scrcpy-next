@@ -40,6 +40,9 @@ struct sc_input_manager {
     bool vfinger_invert_x;
     bool vfinger_invert_y;
 
+    // --wheel-pinch: Ctrl+wheel injects a two-finger pinch
+    bool wheel_pinch;
+
     // --trackpad: two fingers on the computer trackpad drive two device
     // pointers anchored at the mouse cursor (see input_manager.c).
     bool trackpad;
@@ -87,6 +90,7 @@ struct sc_input_manager_params {
     struct sc_mouse_bindings mouse_bindings;
     bool legacy_paste;
     bool trackpad;
+    bool wheel_pinch;
     const struct sc_keymap *keymap; // optional
     bool clipboard_autosync;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values

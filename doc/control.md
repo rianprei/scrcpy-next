@@ -127,6 +127,13 @@ _y_.
 
 This only works for the default mouse mode (`--mouse=sdk`).
 
+With `--wheel-pinch`, <kbd>Ctrl</kbd>+_mouse wheel_ pinches around the mouse
+cursor instead (wheel up to zoom in), like on a trackpad:
+
+```bash
+scrcpy --wheel-pinch
+```
+
 
 ## File drop
 

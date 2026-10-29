@@ -131,6 +131,7 @@ _scrcpy() {
         --time-limit=
         --touchscreen-id=
         --trackpad
+        --wheel-pinch
         --keymap=
         --tunnel-host=
         --tunnel-port=

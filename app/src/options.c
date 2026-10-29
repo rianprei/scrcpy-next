@@ -123,6 +123,7 @@ const struct scrcpy_options scrcpy_options_default = {
     .legacy_paste = false,
     .text_via_clipboard = false,
     .trackpad = false,
+    .wheel_pinch = false,
     .keymap = NULL,
     .power_off_on_close = false,
     .clipboard_autosync = true,

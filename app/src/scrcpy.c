@@ -1007,6 +1007,7 @@ aoa_complete:
             .mouse_bindings = options->mouse_bindings,
             .legacy_paste = options->legacy_paste,
             .trackpad = options->trackpad,
+            .wheel_pinch = options->wheel_pinch,
             .disconnect_timeout = options->disconnect_timeout,
             .keymap = options->keymap ? &s->keymap : NULL,
             .clipboard_autosync = options->clipboard_autosync,

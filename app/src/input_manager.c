@@ -50,6 +50,7 @@ sc_input_manager_init(struct sc_input_manager *im,
     // Trackpad gestures need absolute positions, so they are only available
     // with the SDK mouse processor (not in relative mode: uhid/aoa).
     im->trackpad = params->trackpad && im->mp && !im->mp->relative_mode;
+    im->wheel_pinch = params->wheel_pinch;
     if (params->trackpad && !im->trackpad) {
         LOGW("--trackpad is only available with --mouse=sdk, ignoring");
     }
@@ -1364,6 +1365,43 @@ sc_input_manager_process_mouse_button(struct sc_input_manager *im,
     }
 }
 
+// --wheel-pinch: inject a complete two-finger pinch centered on the cursor,
+// spread for a wheel up (zoom in), closed for a wheel down
+static void
+inject_wheel_pinch(struct sc_input_manager *im, struct sc_point center,
+                   float vscroll) {
+    struct sc_size frame = im->screen->frame_size;
+    // Pinch detectors ignore small spans (config_minScalingSpan, 27 mm by
+    // default): start with fingers half the screen width apart
+    float d0 = MIN(frame.width, frame.height) / 4.f;
+    // +25% per wheel notch up (zoom in), the inverse down, at most 4 notches
+    float v = CLAMP(vscroll, -4.f, 4.f);
+    float d1 = v > 0 ? d0 * (1 + v / 4) : d0 / (1 - v / 4);
+
+    const uint64_t ids[2] = {SC_POINTER_ID_TRACKPAD_FINGER_A,
+                             SC_POINTER_ID_TRACKPAD_FINGER_B};
+    const unsigned steps = 5;
+    for (unsigned step = 0; step <= steps + 1; ++step) {
+        // step 0: down, 1..steps: move, steps + 1: up
+        unsigned k = MIN(step, steps);
+        float d = d0 + (d1 - d0) * k / steps;
+        enum android_motionevent_action action =
+            step == 0 ? AMOTION_EVENT_ACTION_DOWN
+                      : step <= steps ? AMOTION_EVENT_ACTION_MOVE
+                                      : AMOTION_EVENT_ACTION_UP;
+        for (unsigned i = 0; i < 2; ++i) {
+            float x = center.x + (i ? d : -d);
+            struct sc_point point = {
+                .x = (int32_t) CLAMP(x, 0.f, (float) frame.width - 1),
+                .y = center.y,
+            };
+            if (!inject_finger(im, action, point, ids[i])) {
+                return;
+            }
+        }
+    }
+}
+
 static void
 sc_input_manager_process_mouse_wheel(struct sc_input_manager *im,
                                      const SDL_MouseWheelEvent *event) {
@@ -1394,6 +1432,12 @@ sc_input_manager_process_mouse_wheel(struct sc_input_manager *im,
         .vscroll = event->y,
         .buttons_state = im->mouse_buttons_state,
     };
+
+    if (im->wheel_pinch && im->controller && !im->vfinger_down
+            && (SDL_GetModState() & SDL_KMOD_CTRL) && event->y) {
+        inject_wheel_pinch(im, evt.position.point, event->y);
+        return;
+    }
 
     im->mp->ops->process_mouse_scroll(im->mp, &evt);
 }
