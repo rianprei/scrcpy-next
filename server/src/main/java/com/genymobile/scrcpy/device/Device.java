@@ -120,12 +120,12 @@ public final class Device {
         return s.toString();
     }
 
-    public static ClipboardManager.Image getClipboardImage(int maxSize) {
+    public static ClipboardManager.Image getClipboardImage() {
         ClipboardManager clipboardManager = ServiceManager.getClipboardManager();
         if (clipboardManager == null) {
             return null;
         }
-        return clipboardManager.getImage(maxSize);
+        return clipboardManager.getImage();
     }
 
     public static boolean setClipboardImage(Uri uri, String mimeType) {

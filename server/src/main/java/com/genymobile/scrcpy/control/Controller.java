@@ -769,7 +769,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
 
     private void sendClipboard() {
         if (clipboardImage) {
-            ClipboardManager.Image image = Device.getClipboardImage(DeviceMessageWriter.CLIPBOARD_IMAGE_MAX_SIZE);
+            ClipboardManager.Image image = Device.getClipboardImage();
             if (image != null) {
                 sender.send(DeviceMessage.createClipboardImage(image.mimeType, image.data));
                 return;

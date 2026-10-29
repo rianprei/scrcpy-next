@@ -152,16 +152,25 @@ static void test_deserialize_clipboard_image(void) {
     assert(r == 0);
 }
 
-static void test_deserialize_clipboard_image_too_large(void) {
+static void test_deserialize_clipboard_image_invalid_size(void) {
     const uint8_t input[] = {
         DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
         0, // empty MIME type
-        0, 0x80, 0, 1, // size: 8M + 1
+        0x80, 0, 0, 0, // size: more than a Java int
     };
 
     struct sc_device_msg msg;
     ssize_t r = sc_device_msg_deserialize(input, sizeof(input), &msg);
-    assert(r == -1); // could never be received
+    assert(r == -1);
+
+    // a large size is valid (no limit), the message is just incomplete
+    const uint8_t large[] = {
+        DEVICE_MSG_TYPE_CLIPBOARD_IMAGE,
+        0, // empty MIME type
+        0x10, 0, 0, 0, // size: 256M
+    };
+    r = sc_device_msg_deserialize(large, sizeof(large), &msg);
+    assert(r == 0);
 }
 
 int main(int argc, char *argv[]) {
@@ -175,6 +184,6 @@ int main(int argc, char *argv[]) {
     test_deserialize_media_update();
     test_deserialize_media_update_incomplete();
     test_deserialize_clipboard_image();
-    test_deserialize_clipboard_image_too_large();
+    test_deserialize_clipboard_image_invalid_size();
     return 0;
 }

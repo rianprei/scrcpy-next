@@ -483,7 +483,7 @@ static const struct sc_option options[] = {
     {
         .longopt_id = OPT_CLIPBOARD_IMAGE,
         .longopt = "clipboard-image",
-        .text = "Also copy images (up to 8 MiB) from the device clipboard to "
+        .text = "Also copy images from the device clipboard to "
                 "the computer clipboard (when the device clipboard changes, or "
                 "on MOD+c/MOD+x with --no-clipboard-autosync), and paste "
                 "computer clipboard images (Ctrl+v, MOD+v) through the device "

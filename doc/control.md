@@ -91,15 +91,17 @@ To disable automatic clipboard synchronization, use
 
 By default, only text is copied from the device clipboard, and an image pasted
 from the computer clipboard is saved to the device `Pictures/scrcpy` folder. To
-copy and paste images through the device clipboard instead (up to 8 MiB from the
-device, for example an image copied from a browser):
+copy and paste images through the device clipboard instead (for example an image
+copied from a browser):
 
 ```bash
 scrcpy --clipboard-image
 ```
 
 The pasted images are shared through the Android _Shell_ application (the
-previous one is removed on each paste).
+previous one is removed on each paste). There is no size limit: while a large
+image is transferred, the other device messages (text clipboard, HID output)
+wait.
 
 
 ## Pinch-to-zoom, rotate and tilt simulation

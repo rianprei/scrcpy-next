@@ -13,7 +13,6 @@ public class DeviceMessageWriter {
     private static final int MESSAGE_MAX_SIZE = 1 << 18; // 256k
     public static final int CLIPBOARD_TEXT_MAX_LENGTH = MESSAGE_MAX_SIZE - 5; // type: 1 byte; length: 4 bytes
     private static final int MEDIA_TEXT_MAX_LENGTH = 1024;
-    public static final int CLIPBOARD_IMAGE_MAX_SIZE = 1 << 23; // 8M, must match the client (device_msg.h)
 
     private final DataOutputStream dos;
 

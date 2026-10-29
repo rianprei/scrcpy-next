@@ -10,10 +10,6 @@
 #define DEVICE_MSG_MAX_SIZE (1 << 18) // 256k
 // type: 1 byte; length: 4 bytes
 #define DEVICE_MSG_TEXT_MAX_LENGTH (DEVICE_MSG_MAX_SIZE - 5)
-// --clipboard-image, must match the server (DeviceMessageWriter.java)
-#define DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE (1 << 23) // 8M
-// type: 1 byte; MIME type: 1 + 255 bytes; image size: 4 bytes
-#define DEVICE_MSG_BUFFER_SIZE (DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE + 261)
 
 enum sc_device_msg_type {
     DEVICE_MSG_TYPE_CLIPBOARD,

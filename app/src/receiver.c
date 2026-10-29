@@ -276,17 +276,33 @@ static int
 run_receiver(void *data) {
     struct sc_receiver *receiver = data;
 
-    // Large enough for a clipboard image (--clipboard-image); the pages are
-    // only touched when such a message is received
-    static uint8_t buf[DEVICE_MSG_BUFFER_SIZE];
+    // The buffer grows to receive a larger message (a clipboard image, with
+    // --clipboard-image), then shrinks back
+    size_t cap = DEVICE_MSG_MAX_SIZE;
+    uint8_t *buf = malloc(cap);
+    if (!buf) {
+        LOG_OOM();
+        receiver->cbs->on_ended(receiver, true, receiver->cbs_userdata);
+        return 0;
+    }
     size_t head = 0;
 
     bool error = false;
 
     for (;;) {
-        assert(head < DEVICE_MSG_BUFFER_SIZE);
-        ssize_t r = net_recv(receiver->control_socket, buf + head,
-                             DEVICE_MSG_BUFFER_SIZE - head);
+        if (head == cap) {
+            // The buffer is full with an incomplete message
+            uint8_t *grown = cap <= SIZE_MAX / 2 ? realloc(buf, cap * 2) : NULL;
+            if (!grown) {
+                LOG_OOM();
+                error = true;
+                break;
+            }
+            buf = grown;
+            cap *= 2;
+        }
+        assert(head < cap);
+        ssize_t r = net_recv(receiver->control_socket, buf + head, cap - head);
         if (r <= 0) {
             LOGD("Receiver stopped");
             // device disconnected: keep error=false
@@ -305,9 +321,19 @@ run_receiver(void *data) {
             head -= consumed;
             // shift the remaining data in the buffer
             memmove(buf, &buf[consumed], head);
+
+            if (cap > DEVICE_MSG_MAX_SIZE && head < DEVICE_MSG_MAX_SIZE) {
+                uint8_t *shrunk = realloc(buf, DEVICE_MSG_MAX_SIZE);
+                if (shrunk) {
+                    // On failure, just keep the larger buffer
+                    buf = shrunk;
+                    cap = DEVICE_MSG_MAX_SIZE;
+                }
+            }
         }
     }
 
+    free(buf);
     receiver->cbs->on_ended(receiver, error, receiver->cbs_userdata);
 
     return 0;

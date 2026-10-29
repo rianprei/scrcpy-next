@@ -76,9 +76,10 @@ sc_device_msg_deserialize(const uint8_t *buf, size_t len,
                 return 0; // no complete message
             }
             size_t size = sc_read32be(&buf[2 + mime_len]);
-            if (size > DEVICE_MSG_CLIPBOARD_IMAGE_MAX_SIZE) {
-                LOGE("Clipboard image too large: %" SC_PRIsizet " bytes", size);
-                return -1; // it could never be received
+            if (size > INT32_MAX) {
+                // The server writes a Java int (a byte array length)
+                LOGE("Invalid clipboard image size: %" SC_PRIsizet, size);
+                return -1;
             }
             size_t header = 2 + mime_len + 4;
             if (size > len - header) {
