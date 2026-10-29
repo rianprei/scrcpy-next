@@ -60,6 +60,7 @@ enum sc_control_msg_type {
     SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_NEARER,
     SC_CONTROL_MSG_TYPE_CAMERA_FOCUS_FARTHER,
     SC_CONTROL_MSG_TYPE_CAMERA_AUTOFOCUS,
+    SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE,
 };
 
 // Values must be kept in sync with the server (ControlMessage.java)
@@ -148,6 +149,10 @@ struct sc_control_msg {
         struct {
             char *path; // owned, to be freed by free()
         } scan_file;
+        struct {
+            char *path; // owned, to be freed by free()
+            bool paste;
+        } set_clipboard_image;
         struct {
             enum sc_media_action action;
             int64_t position_ms; // only for SC_MEDIA_ACTION_SEEK

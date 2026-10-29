@@ -35,6 +35,7 @@ public final class ControlMessage {
     public static final int TYPE_CAMERA_FOCUS_NEARER = 25;
     public static final int TYPE_CAMERA_FOCUS_FARTHER = 26;
     public static final int TYPE_CAMERA_AUTOFOCUS = 27;
+    public static final int TYPE_SET_CLIPBOARD_IMAGE = 28;
 
     public static final long SEQUENCE_INVALID = 0;
 
@@ -199,6 +200,14 @@ public final class ControlMessage {
         msg.type = TYPE_RESIZE_DISPLAY;
         msg.width = width;
         msg.height = height;
+        return msg;
+    }
+
+    public static ControlMessage createSetClipboardImage(String path, boolean paste) {
+        ControlMessage msg = new ControlMessage();
+        msg.type = TYPE_SET_CLIPBOARD_IMAGE;
+        msg.text = path;
+        msg.paste = paste;
         return msg;
     }
 

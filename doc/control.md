@@ -89,12 +89,17 @@ way as <kbd>MOD</kbd>+<kbd>Shift</kbd>+<kbd>v</kbd>).
 To disable automatic clipboard synchronization, use
 `--no-clipboard-autosync`.
 
-By default, only text is copied from the device clipboard. To also copy images
-(up to 8 MiB, for example an image copied from a browser):
+By default, only text is copied from the device clipboard, and an image pasted
+from the computer clipboard is saved to the device `Pictures/scrcpy` folder. To
+copy and paste images through the device clipboard instead (up to 8 MiB from the
+device, for example an image copied from a browser):
 
 ```bash
 scrcpy --clipboard-image
 ```
+
+The pasted images are shared through the Android _Shell_ application (the
+previous one is removed on each paste).
 
 
 ## Pinch-to-zoom, rotate and tilt simulation

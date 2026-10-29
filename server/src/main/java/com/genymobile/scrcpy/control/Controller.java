@@ -33,7 +33,11 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -79,6 +83,11 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
 
     // Interval between simulated user activity events
     private static final long KEEP_ACTIVE_INTERVAL_MS = 4000;
+
+    // --clipboard-image: images pasted from the computer (see setClipboardImage())
+    private static final String CLIPBOARD_IMAGE_PUSH_DIR = "/data/local/tmp/";
+    private static final String SHELL_SHARED_DIR = "/data/user_de/0/com.android.shell/files/bugreports";
+    private static final String SHELL_SHARED_URI = "content://com.android.shell/bugreports/";
 
     private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor();
     private ExecutorService startAppExecutor;
@@ -424,6 +433,9 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                     return true;
                 case ControlMessage.TYPE_SET_CLIPBOARD:
                     setClipboard(msg.getText(), msg.getPaste(), msg.getSequence());
+                    return true;
+                case ControlMessage.TYPE_SET_CLIPBOARD_IMAGE:
+                    setClipboardImage(msg.getText(), msg.getPaste());
                     return true;
                 case ControlMessage.TYPE_SET_DISPLAY_POWER:
                     if (supportsInputEvents) {
@@ -1158,6 +1170,64 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private void resizeDisplay(int width, int height) {
         NewDisplayCapture newDisplayCapture = (NewDisplayCapture) surfaceCapture;
         newDisplayCapture.requestResize(width, height);
+    }
+
+    private void setClipboardImage(String path, boolean paste) {
+        File file = new File(path);
+        String name = file.getName();
+        String mimeType = name.endsWith(".png") ? "image/png" : name.endsWith(".bmp") ? "image/bmp" : null;
+        if (!path.equals(CLIPBOARD_IMAGE_PUSH_DIR + name) || !name.startsWith("scrcpy-") || mimeType == null) {
+            Ln.w("Unexpected clipboard image path: " + path);
+            return;
+        }
+
+        // The Shell app shares the files of this directory through its FileProvider (the server runs with the same uid), so that the
+        // application which pastes can read the image.
+        // shortcut: user 0 only (Android >= 7, device protected storage), use the current user if needed
+        File dir = new File(SHELL_SHARED_DIR);
+        if (!dir.isDirectory() && !dir.mkdirs()) {
+            Ln.w("Could not create " + dir);
+            return;
+        }
+        // Remove the previous clipboard images
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().startsWith("scrcpy-") && !f.delete()) {
+                    Ln.w("Could not remove " + f);
+                }
+            }
+        }
+        // Copy, a rename fails (different file encryption policies)
+        File shared = new File(dir, name);
+        try (InputStream in = new FileInputStream(file); OutputStream out = new FileOutputStream(shared)) {
+            byte[] buffer = new byte[64 * 1024];
+            int r;
+            while ((r = in.read(buffer)) != -1) {
+                out.write(buffer, 0, r);
+            }
+        } catch (IOException e) {
+            Ln.w("Could not copy " + file + " to " + shared + ": " + e.getMessage());
+            return;
+        } finally {
+            if (!file.delete()) {
+                Ln.w("Could not remove " + file);
+            }
+        }
+
+        Uri uri = Uri.parse(SHELL_SHARED_URI + name);
+        isSettingClipboard.set(true);
+        boolean ok = Device.setClipboardImage(uri, mimeType);
+        isSettingClipboard.set(false);
+        if (!ok) {
+            return;
+        }
+        Ln.i("Device clipboard image set");
+
+        // On Android >= 7, also press the PASTE key if requested
+        if (paste && Build.VERSION.SDK_INT >= AndroidVersions.API_24_ANDROID_7_0 && supportsInputEvents) {
+            pressReleaseKeycode(KeyEvent.KEYCODE_PASTE, Device.INJECT_MODE_ASYNC);
+        }
     }
 
     private void scanFile(String path) {

@@ -571,6 +571,29 @@ static void test_serialize_scan_file(void) {
     assert(!memcmp(buf, expected, sizeof(expected)));
 }
 
+static void test_serialize_set_clipboard_image(void) {
+    struct sc_control_msg msg = {
+        .type = SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE,
+        .set_clipboard_image = {
+            .path = "/data/local/tmp/a.png",
+            .paste = true,
+        },
+    };
+
+    uint8_t buf[SC_CONTROL_MSG_MAX_SIZE];
+    size_t size = sc_control_msg_serialize(&msg, buf);
+    assert(size == 27);
+
+    const uint8_t expected[] = {
+        SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE,
+        1, // paste
+        0x00, 0x00, 0x00, 0x15, // path length
+        '/', 'd', 'a', 't', 'a', '/', 'l', 'o', 'c', 'a', 'l',
+        '/', 't', 'm', 'p', '/', 'a', '.', 'p', 'n', 'g', // path
+    };
+    assert(!memcmp(buf, expected, sizeof(expected)));
+}
+
 static void test_serialize_media_action(void) {
     struct sc_control_msg msg = {
         .type = SC_CONTROL_MSG_TYPE_MEDIA_ACTION,
@@ -623,6 +646,7 @@ int main(int argc, char *argv[]) {
     test_serialize_camera_focus();
     test_serialize_resize_display();
     test_serialize_scan_file();
+    test_serialize_set_clipboard_image();
     test_serialize_media_action();
     return 0;
 }

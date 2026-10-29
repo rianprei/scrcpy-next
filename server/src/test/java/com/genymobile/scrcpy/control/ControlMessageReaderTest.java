@@ -528,6 +528,29 @@ public class ControlMessageReaderTest {
     }
 
     @Test
+    public void testParseSetClipboardImage() throws IOException {
+        byte[] path = "/data/local/tmp/scrcpy-a.png".getBytes(StandardCharsets.UTF_8);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+        dos.writeByte(ControlMessage.TYPE_SET_CLIPBOARD_IMAGE);
+        dos.writeByte(1); // paste
+        dos.writeInt(path.length);
+        dos.write(path);
+        byte[] packet = bos.toByteArray();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(packet);
+        ControlMessageReader reader = new ControlMessageReader(bis);
+
+        ControlMessage event = reader.read();
+        Assert.assertEquals(ControlMessage.TYPE_SET_CLIPBOARD_IMAGE, event.getType());
+        Assert.assertEquals("/data/local/tmp/scrcpy-a.png", event.getText());
+        Assert.assertTrue(event.getPaste());
+
+        Assert.assertEquals(-1, bis.read()); // EOS
+    }
+
+    @Test
     public void testParseRequestKeyFrame() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos);

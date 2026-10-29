@@ -19,6 +19,7 @@ import android.app.ActivityOptions;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -125,6 +126,14 @@ public final class Device {
             return null;
         }
         return clipboardManager.getImage(maxSize);
+    }
+
+    public static boolean setClipboardImage(Uri uri, String mimeType) {
+        ClipboardManager clipboardManager = ServiceManager.getClipboardManager();
+        if (clipboardManager == null) {
+            return false;
+        }
+        return clipboardManager.setImage(uri, mimeType);
     }
 
     public static boolean setClipboardText(String text) {

@@ -710,7 +710,8 @@ run_session(struct scrcpy_options *options, struct sc_reconnect *rc) {
 
     if (options->window && options->control) {
         if (!sc_file_pusher_init(&s->file_pusher, &s->controller, serial,
-                                 options->push_target)) {
+                                 options->push_target,
+                                 options->clipboard_image)) {
             goto end;
         }
         fp = &s->file_pusher;

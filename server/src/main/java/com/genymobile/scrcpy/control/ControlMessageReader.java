@@ -68,6 +68,8 @@ public class ControlMessageReader {
                 return parseResizeDisplay();
             case ControlMessage.TYPE_SCAN_FILE:
                 return parseScanFile();
+            case ControlMessage.TYPE_SET_CLIPBOARD_IMAGE:
+                return parseSetClipboardImage();
             case ControlMessage.TYPE_MEDIA_ACTION:
                 return parseMediaAction();
             default:
@@ -195,6 +197,12 @@ public class ControlMessageReader {
         int width = dis.readUnsignedShort();
         int height = dis.readUnsignedShort();
         return ControlMessage.createResizeDisplay(width, height);
+    }
+
+    private ControlMessage parseSetClipboardImage() throws IOException {
+        boolean paste = dis.readByte() != 0;
+        String path = parseString();
+        return ControlMessage.createSetClipboardImage(path, paste);
     }
 
     private ControlMessage parseScanFile() throws IOException {

@@ -14,8 +14,8 @@ struct sc_controller;
 enum sc_file_pusher_action {
     SC_FILE_PUSHER_ACTION_INSTALL_APK,
     SC_FILE_PUSHER_ACTION_PUSH_FILE,
-    // Push a temporary image file to the device Pictures folder, then remove
-    // the local file
+    // Push a temporary image file to the device Pictures folder (or clipboard
+    // with --clipboard-image), then remove the local file
     SC_FILE_PUSHER_ACTION_PUSH_IMAGE,
 };
 
@@ -30,6 +30,9 @@ struct sc_file_pusher {
     struct sc_controller *controller; // used to send SCAN_FILE requests
     char *serial;
     const char *push_target;
+    // --clipboard-image: pasted images go to the device clipboard instead of
+    // the Pictures folder
+    bool clipboard_image;
     sc_thread thread;
     sc_mutex mutex;
     sc_cond event_cond;
@@ -42,7 +45,8 @@ struct sc_file_pusher {
 
 bool
 sc_file_pusher_init(struct sc_file_pusher *fp, struct sc_controller *controller,
-                    const char *serial, const char *push_target);
+                    const char *serial, const char *push_target,
+                    bool clipboard_image);
 
 void
 sc_file_pusher_destroy(struct sc_file_pusher *fp);

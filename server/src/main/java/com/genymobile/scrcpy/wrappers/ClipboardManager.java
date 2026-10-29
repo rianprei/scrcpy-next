@@ -86,6 +86,12 @@ public final class ClipboardManager {
         }
     }
 
+    public boolean setImage(Uri uri, String mimeType) {
+        ClipData clipData = new ClipData("image", new String[] {mimeType}, new ClipData.Item(uri));
+        manager.setPrimaryClip(clipData);
+        return true;
+    }
+
     public boolean setText(CharSequence text) {
         ClipData clipData = ClipData.newPlainText(null, text);
         manager.setPrimaryClip(clipData);

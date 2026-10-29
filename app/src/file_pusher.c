@@ -11,11 +11,15 @@
 #include "control_msg.h"
 #include "controller.h"
 #include "util/log.h"
+#include "util/str.h"
 
 #define DEFAULT_PUSH_TARGET "/sdcard/Download/"
 
 // Images from the computer clipboard are pushed to the device Pictures folder
 #define IMAGE_PUSH_TARGET "/sdcard/Pictures/scrcpy/"
+// --clipboard-image: the server moves the file where the device clipboard can
+// share it
+#define CLIPBOARD_IMAGE_PUSH_TARGET "/data/local/tmp/"
 
 static void
 sc_file_pusher_request_destroy(struct sc_file_pusher_request *req) {
@@ -24,7 +28,8 @@ sc_file_pusher_request_destroy(struct sc_file_pusher_request *req) {
 
 bool
 sc_file_pusher_init(struct sc_file_pusher *fp, struct sc_controller *controller,
-                    const char *serial, const char *push_target) {
+                    const char *serial, const char *push_target,
+                    bool clipboard_image) {
     assert(controller);
     assert(serial);
 
@@ -63,6 +68,7 @@ sc_file_pusher_init(struct sc_file_pusher *fp, struct sc_controller *controller,
     fp->stopped = false;
 
     fp->push_target = push_target ? push_target : DEFAULT_PUSH_TARGET;
+    fp->clipboard_image = clipboard_image;
     fp->controller = controller;
 
     return true;
@@ -137,6 +143,37 @@ request_scan_file(struct sc_file_pusher *fp, const char *path) {
     return true;
 }
 
+static bool
+request_set_clipboard_image(struct sc_file_pusher *fp, const char *file) {
+    // The temporary file name (scrcpy-<date>.<ext>) is kept on the device
+    const char *name = strrchr(file, '/');
+#ifdef _WIN32
+    const char *name2 = strrchr(file, '\\');
+    if (name2 > name) {
+        name = name2;
+    }
+#endif
+    name = name ? name + 1 : file;
+
+    struct sc_control_msg msg;
+    msg.type = SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE;
+    msg.set_clipboard_image.paste = true;
+    msg.set_clipboard_image.path =
+        sc_str_concat(CLIPBOARD_IMAGE_PUSH_TARGET, name);
+    if (!msg.set_clipboard_image.path) {
+        LOG_OOM();
+        return false;
+    }
+
+    if (!sc_controller_push_msg(fp->controller, &msg)) {
+        LOGW("Could not request 'set clipboard image'");
+        free(msg.set_clipboard_image.path);
+        return false;
+    }
+
+    return true;
+}
+
 static int
 run_file_pusher(void *data) {
     struct sc_file_pusher *fp = data;
@@ -170,6 +207,23 @@ run_file_pusher(void *data) {
                 LOGI("%s successfully installed", req.file);
             } else {
                 LOGE("Failed to install %s", req.file);
+            }
+        } else if (req.action == SC_FILE_PUSHER_ACTION_PUSH_IMAGE
+                && fp->clipboard_image) {
+            LOGI("Pushing %s...", req.file);
+            bool ok = sc_adb_push(intr, serial, req.file,
+                                  CLIPBOARD_IMAGE_PUSH_TARGET, 0);
+            if (ok) {
+                request_set_clipboard_image(fp, req.file); // any error already logged
+            } else {
+                LOGE("Failed to push %s to %s", req.file,
+                     CLIPBOARD_IMAGE_PUSH_TARGET);
+            }
+
+            // The image is a temporary file, remove it in any case
+            if (!SDL_RemovePath(req.file)) {
+                LOGW("Could not remove temporary image file %s: %s",
+                     req.file, SDL_GetError());
             }
         } else if (req.action == SC_FILE_PUSHER_ACTION_PUSH_IMAGE) {
             LOGI("Pushing %s...", req.file);

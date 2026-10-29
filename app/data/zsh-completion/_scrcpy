@@ -41,7 +41,7 @@ arguments=(
     '--camera-zoom[Specify the camera zoom initial value]'
     '--capture-orientation=[Set the capture video orientation]:orientation:(0 90 180 270 flip0 flip90 flip180 flip270 @0 @90 @180 @270 @flip0 @flip90 @flip180 @flip270)'
     '--client-audio-source=[Inject audio captured on the computer into the device microphone]'
-    '--clipboard-image[Also copy images from the device clipboard to the computer clipboard]'
+    '--clipboard-image[Copy and paste images through the device clipboard]'
     '--config-file=[Use a custom configuration file]:configuration file:_files'
     '--crop=[\[width\:height\:x\:y\] Crop the device screen on the server]'
     {-d,--select-usb}'[Use USB device]'

@@ -205,6 +205,12 @@ sc_control_msg_serialize(const struct sc_control_msg *msg, uint8_t *buf) {
                                       SC_CONTROL_MSG_SCAN_FILE_PATH_MAX_LENGTH);
             return 1 + len;
         };
+        case SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE: {
+            buf[1] = msg->set_clipboard_image.paste;
+            size_t len = write_string(&buf[2], msg->set_clipboard_image.path,
+                                      SC_CONTROL_MSG_SCAN_FILE_PATH_MAX_LENGTH);
+            return 2 + len;
+        };
         case SC_CONTROL_MSG_TYPE_MEDIA_ACTION:
             buf[1] = msg->media_action.action;
             sc_write64be(&buf[2], (uint64_t) msg->media_action.position_ms);
@@ -380,6 +386,11 @@ sc_control_msg_log(const struct sc_control_msg *msg) {
         case SC_CONTROL_MSG_TYPE_REQUEST_KEY_FRAME:
             LOG_CMSG("request key frame");
             break;
+        case SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE:
+            LOG_CMSG("set clipboard image \"%s\" paste=%s",
+                     msg->set_clipboard_image.path,
+                     msg->set_clipboard_image.paste ? "true" : "false");
+            break;
         case SC_CONTROL_MSG_TYPE_MEDIA_ACTION:
             LOG_CMSG("media action %s position=%" PRIi64 "ms",
                      MEDIA_ACTION_LABEL(msg->media_action.action),
@@ -415,6 +426,9 @@ sc_control_msg_destroy(struct sc_control_msg *msg) {
             break;
         case SC_CONTROL_MSG_TYPE_SCAN_FILE:
             free(msg->scan_file.path);
+            break;
+        case SC_CONTROL_MSG_TYPE_SET_CLIPBOARD_IMAGE:
+            free(msg->set_clipboard_image.path);
             break;
         default:
             // do nothing
