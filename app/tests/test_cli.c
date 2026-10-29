@@ -281,7 +281,7 @@ static void test_parse_shortcut_mods(void) {
     assert(!ok);
 
     ok = sc_parse_shortcut_mods("lctrl+", &mods);
-    assert(!ok);0
+    assert(!ok);
 
     ok = sc_parse_shortcut_mods("lctrl,", &mods);
     assert(!ok);
