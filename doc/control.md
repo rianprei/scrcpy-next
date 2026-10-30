@@ -101,7 +101,8 @@ scrcpy --clipboard-image
 The pasted images are shared through the Android _Shell_ application (the
 previous one is removed on each paste). There is no size limit: while a large
 image is transferred, the other device messages (text clipboard, HID output)
-wait.
+wait. On X11, images larger than 16 MiB cannot be pasted in other applications
+(SDL sends the selection in a single X request).
 
 
 ## Pinch-to-zoom, rotate and tilt simulation

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SDL3/SDL_clipboard.h>
+#include <SDL3/SDL_video.h>
 
 #include "device_msg.h"
 #include "events.h"
@@ -110,6 +111,15 @@ task_set_clipboard_image(void *userdata) {
     if (ok) {
         LOGI("Device clipboard image copied (%s, %" PRIu32 " bytes)",
              image->mime_type, image->size);
+        // SDL sends the X11 selection in a single request (no INCR), which
+        // the X server rejects above its maximum request size (16 MiB with
+        // BIG-REQUESTS): measured with SDL 3.4.18
+        const char *driver = SDL_GetCurrentVideoDriver();
+        if (driver && !strcmp(driver, "x11")
+                && image->size > (UINT32_C(16) << 20) - 4096) {
+            LOGW("Clipboard images larger than 16 MiB may not be pasted on "
+                 "X11 (SDL limitation)");
+        }
     } else {
         LOGE("Could not set clipboard image: %s", SDL_GetError());
     }
