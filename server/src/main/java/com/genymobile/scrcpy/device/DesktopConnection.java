@@ -1,5 +1,6 @@
 package com.genymobile.scrcpy.device;
 
+import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.control.ControlChannel;
 import com.genymobile.scrcpy.util.IO;
 import com.genymobile.scrcpy.util.Ln;
@@ -8,6 +9,7 @@ import com.genymobile.scrcpy.util.StringUtils;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.system.ErrnoException;
 import android.system.Os;
@@ -171,9 +173,12 @@ public final class DesktopConnection implements Closeable {
             // The video packets must not wait for an ACK (Nagle's algorithm)
             socket.setTcpNoDelay(true);
             pfd = ParcelFileDescriptor.fromSocket(socket);
-            // Like setSoTimeout() for the local sockets (a Java Socket timeout only applies to reads)
-            Os.setsockoptTimeval(pfd.getFileDescriptor(), OsConstants.SOL_SOCKET, OsConstants.SO_SNDTIMEO,
-                    StructTimeval.fromMillis(SEND_TIMEOUT_MS));
+            // Like setSoTimeout() for the local sockets (a Java Socket timeout only applies to reads).
+            // shortcut: no send timeout before Android 10 (hidden API), add one through reflection if needed
+            if (Build.VERSION.SDK_INT >= AndroidVersions.API_29_ANDROID_10) {
+                Os.setsockoptTimeval(pfd.getFileDescriptor(), OsConstants.SOL_SOCKET, OsConstants.SO_SNDTIMEO,
+                        StructTimeval.fromMillis(SEND_TIMEOUT_MS));
+            }
         } catch (IOException | ErrnoException e) {
             if (pfd != null) {
                 pfd.close();
