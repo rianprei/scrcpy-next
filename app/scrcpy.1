@@ -840,6 +840,12 @@ Only available with \fB\-\-mouse=sdk\fR (the default). Mouse wheel events are ig
 Turn Ctrl+mouse wheel into a two-finger pinch centered on the mouse cursor (wheel up to zoom in), for applications which only zoom with a pinch (maps, photos...).
 
 .TP
+.BI "\-\-video\-tcp" [=[ip:]port]
+Send the video over a direct TCP connection to the device instead of the adb connection (audio and control still use adb), for a device connected over TCP/IP (the IP is taken from its serial, unless set explicitly).
+
+The device listens on the port (27200 by default) only until the client connects; the client is authenticated by a random token passed through adb. The video is not encrypted, even with an adb connection over TLS (wireless debugging).
+
+.TP
 .BI "\-\-tunnel\-host " ip
 Set the IP address of the adb tunnel to reach the scrcpy server. This option automatically enables \fB\-\-force\-adb\-forward\fR.
 

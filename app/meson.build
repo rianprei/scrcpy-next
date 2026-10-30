@@ -398,6 +398,12 @@ if get_option('buildtype') == 'debug'
             'tests/test_strbuf.c',
             'src/util/strbuf.c',
         ]],
+        ['test_rand', [
+            'tests/test_rand.c',
+            'src/util/log.c',
+            'src/util/rand.c',
+            'src/util/tick.c',
+        ]],
         ['test_latency_probe', [
             'tests/test_latency_probe.c',
             'src/latency_probe_calc.c',

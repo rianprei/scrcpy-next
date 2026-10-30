@@ -137,6 +137,7 @@ _scrcpy() {
         --wheel-pinch
         --keymap=
         --tunnel-host=
+        --video-tcp
         --tunnel-port=
         --v4l2-buffer=
         --v4l2-sink=

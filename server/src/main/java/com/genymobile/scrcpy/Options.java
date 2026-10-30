@@ -3,6 +3,7 @@ package com.genymobile.scrcpy;
 import com.genymobile.scrcpy.audio.AudioCodec;
 import com.genymobile.scrcpy.audio.AudioSource;
 import com.genymobile.scrcpy.device.Device;
+import com.genymobile.scrcpy.device.VideoTcpServer;
 import com.genymobile.scrcpy.model.CodecOption;
 import com.genymobile.scrcpy.model.NewDisplay;
 import com.genymobile.scrcpy.model.Orientation;
@@ -27,6 +28,8 @@ public class Options {
     private boolean video = true;
     private boolean audio = true;
     private boolean clientAudio;
+    private int videoTcpPort; // 0 if disabled
+    private byte[] videoTcpToken;
     private int maxSize;
     private int minSizeAlignment = 1;
     private VideoCodec videoCodec = VideoCodec.H264;
@@ -124,6 +127,14 @@ public class Options {
 
     public boolean getClientAudio() {
         return clientAudio;
+    }
+
+    public int getVideoTcpPort() {
+        return videoTcpPort;
+    }
+
+    public byte[] getVideoTcpToken() {
+        return videoTcpToken;
     }
 
     public int getMaxSize() {
@@ -456,6 +467,15 @@ public class Options {
                 case "client_audio":
                     options.clientAudio = Boolean.parseBoolean(value);
                     break;
+                case "video_tcp_port":
+                    options.videoTcpPort = Integer.parseInt(value);
+                    if (options.videoTcpPort <= 0 || options.videoTcpPort > 0xFFFF) {
+                        throw new IllegalArgumentException("Invalid video TCP port: " + value);
+                    }
+                    break;
+                case "video_tcp_token":
+                    options.videoTcpToken = VideoTcpServer.parseToken(value);
+                    break;
                 case "video_codec":
                     VideoCodec videoCodec = VideoCodec.findByName(value);
                     if (videoCodec == null) {
@@ -737,6 +757,11 @@ public class Options {
                 && (options.audioSource == AudioSource.VOICE_CALL
                 || options.audioSource == AudioSource.VOICE_CALL_UPLINK)) {
             throw new IllegalArgumentException("client_audio is incompatible with audio_source=voice-call and audio_source=voice-call-uplink");
+        }
+
+        if (options.videoTcpPort != 0 && options.videoTcpToken == null) {
+            // The token authenticates the client, never listen without it
+            throw new IllegalArgumentException("video_tcp_port requires video_tcp_token");
         }
 
         return options;

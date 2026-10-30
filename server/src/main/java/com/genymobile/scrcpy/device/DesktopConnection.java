@@ -2,15 +2,23 @@ package com.genymobile.scrcpy.device;
 
 import com.genymobile.scrcpy.control.ControlChannel;
 import com.genymobile.scrcpy.util.IO;
+import com.genymobile.scrcpy.util.Ln;
 import com.genymobile.scrcpy.util.StringUtils;
 
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.os.ParcelFileDescriptor;
+import android.system.ErrnoException;
+import android.system.Os;
+import android.system.OsConstants;
+import android.system.StructTimeval;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 public final class DesktopConnection implements Closeable {
@@ -20,9 +28,13 @@ public final class DesktopConnection implements Closeable {
     private static final String SOCKET_NAME_PREFIX = "scrcpy";
 
     private static final int SEND_TIMEOUT_MS = 5000;
+    private static final int VIDEO_TCP_TIMEOUT_MS = 10000;
 
     private final LocalSocket videoSocket;
-    private final FileDescriptor videoFd;
+    private FileDescriptor videoFd;
+    // --video-tcp: the video socket is a direct TCP connection instead of videoSocket
+    private Socket videoTcpSocket;
+    private ParcelFileDescriptor videoTcpPfd;
 
     private final LocalSocket audioSocket;
     private final FileDescriptor audioFd;
@@ -145,6 +157,37 @@ public final class DesktopConnection implements Closeable {
         return new DesktopConnection(videoSocket, audioSocket, controlSocket, clientAudioSocket);
     }
 
+    /**
+     * Use a direct TCP connection for the video (--video-tcp), once the adb sockets are connected (opened without video).
+     *
+     * @param serverSocket listening before the adb sockets were connected, closed by this method
+     */
+    public void acceptVideoTcp(ServerSocket serverSocket, byte[] token) throws IOException {
+        assert videoSocket == null;
+        Socket socket = VideoTcpServer.acceptAuthenticated(serverSocket, token, VIDEO_TCP_TIMEOUT_MS);
+        Ln.i("Video TCP: connected to " + socket.getInetAddress());
+        ParcelFileDescriptor pfd = null;
+        try {
+            // The video packets must not wait for an ACK (Nagle's algorithm)
+            socket.setTcpNoDelay(true);
+            pfd = ParcelFileDescriptor.fromSocket(socket);
+            // Like setSoTimeout() for the local sockets (a Java Socket timeout only applies to reads)
+            Os.setsockoptTimeval(pfd.getFileDescriptor(), OsConstants.SOL_SOCKET, OsConstants.SO_SNDTIMEO,
+                    StructTimeval.fromMillis(SEND_TIMEOUT_MS));
+        } catch (IOException | ErrnoException e) {
+            if (pfd != null) {
+                pfd.close();
+            }
+            socket.close();
+            throw e instanceof IOException ? (IOException) e : new IOException(e);
+        }
+        synchronized (this) {
+            videoTcpSocket = socket;
+            videoTcpPfd = pfd;
+            videoFd = pfd.getFileDescriptor();
+        }
+    }
+
     private LocalSocket getFirstSocket() {
         if (videoSocket != null) {
             return videoSocket;
@@ -163,6 +206,10 @@ public final class DesktopConnection implements Closeable {
             videoSocket.shutdownInput();
             videoSocket.shutdownOutput();
         }
+        if (videoTcpSocket != null) {
+            videoTcpSocket.shutdownInput();
+            videoTcpSocket.shutdownOutput();
+        }
         if (audioSocket != null) {
             audioSocket.shutdownInput();
             audioSocket.shutdownOutput();
@@ -177,9 +224,13 @@ public final class DesktopConnection implements Closeable {
         }
     }
 
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (videoSocket != null) {
             videoSocket.close();
+        }
+        if (videoTcpSocket != null) {
+            videoTcpPfd.close();
+            videoTcpSocket.close();
         }
         if (audioSocket != null) {
             audioSocket.close();

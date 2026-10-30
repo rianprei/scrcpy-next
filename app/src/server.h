@@ -49,6 +49,9 @@ struct sc_server_params {
     struct sc_port_range port_range;
     uint32_t tunnel_host;
     uint16_t tunnel_port;
+    bool video_tcp;
+    uint32_t video_tcp_host; // 0 for the IP of the device serial (ip:port)
+    uint16_t video_tcp_port;
     uint16_t max_size;
     uint8_t min_size_alignment;
     uint32_t video_bit_rate;
@@ -98,6 +101,9 @@ struct sc_server_params {
     uint8_t list;
 };
 
+// Must match the server (VideoTcpServer.java)
+#define SC_VIDEO_TCP_TOKEN_LENGTH 32
+
 struct sc_server {
     // The internal allocated strings are copies owned by the server
     struct sc_server_params params;
@@ -113,6 +119,10 @@ struct sc_server {
 
     struct sc_intr intr;
     struct sc_adb_tunnel tunnel;
+
+    // --video-tcp: authenticates the direct video connection (sent to the
+    // server through the adb shell command line, an authenticated channel)
+    uint8_t video_tcp_token[SC_VIDEO_TCP_TOKEN_LENGTH];
 
     sc_socket video_socket;
     sc_socket audio_socket;

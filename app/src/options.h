@@ -281,6 +281,9 @@ struct sc_shortcut_remaps {
     unsigned count;
 };
 
+// --video-tcp
+#define SC_VIDEO_TCP_DEFAULT_PORT 27200
+
 struct scrcpy_options {
     const char *serial;
     const char *crop;
@@ -324,6 +327,9 @@ struct scrcpy_options {
     struct sc_port_range port_range;
     uint32_t tunnel_host;
     uint16_t tunnel_port;
+    bool video_tcp;
+    uint32_t video_tcp_host; // 0 for the IP of the device serial (ip:port)
+    uint16_t video_tcp_port;
     uint8_t shortcut_mods; // OR of enum sc_shortcut_mod values
     struct sc_shortcut_remaps shortcut_remaps;
     uint8_t min_size_alignment;

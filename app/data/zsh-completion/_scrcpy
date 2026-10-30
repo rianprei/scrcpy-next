@@ -140,6 +140,7 @@ arguments=(
     '--wheel-pinch[Turn Ctrl+mouse wheel into a two-finger pinch]'
     '--trackpad[Turn two-finger trackpad gestures into two touch pointers on the device]'
     '--touchscreen-id=[Associate a device touchscreen (input descriptor) with the mirrored display]'
+    '--video-tcp=[Send the video over a direct TCP connection to the device]'
     '--tunnel-host=[Set the IP address of the adb tunnel to reach the scrcpy server]'
     '--tunnel-port=[Set the TCP port of the adb tunnel to reach the scrcpy server]'
     '--v4l2-buffer=[Add a buffering delay \(in milliseconds\) before pushing frames]'

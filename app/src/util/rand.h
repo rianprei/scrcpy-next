@@ -4,6 +4,8 @@
 #include "common.h"
 
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 struct sc_rand {
     unsigned short xsubi[3];
@@ -12,5 +14,8 @@ struct sc_rand {
 void sc_rand_init(struct sc_rand *rand);
 uint32_t sc_rand_u32(struct sc_rand *rand);
 uint64_t sc_rand_u64(struct sc_rand *rand);
+
+// Fill buf with cryptographically secure random bytes (sc_rand is not)
+bool sc_rand_secure(void *buf, size_t len);
 
 #endif

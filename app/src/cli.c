@@ -135,6 +135,7 @@ enum {
     OPT_CAMERA_TORCH,
     OPT_CAMERA_ZOOM,
     OPT_CAMERA_PIP,
+    OPT_VIDEO_TCP,
     OPT_MIN_SIZE_ALIGNMENT,
     OPT_NO_WINDOW_ASPECT_RATIO_LOCK,
     OPT_NO_WINDOW_AUTO_RESIZE,
@@ -1317,6 +1318,20 @@ static const struct sc_option options[] = {
                 "Default is localhost.",
     },
     {
+        .longopt_id = OPT_VIDEO_TCP,
+        .longopt = "video-tcp",
+        .argdesc = "[ip:]port",
+        .optional_arg = true,
+        .text = "Send the video over a direct TCP connection to the device "
+                "instead of the adb connection (audio and control still use "
+                "adb), for a device connected over TCP/IP (the IP is taken "
+                "from its serial, unless set explicitly).\n"
+                "The device listens on the port (27200 by default) only until "
+                "the client connects; the client is authenticated by a random "
+                "token passed through adb. The video is not encrypted, even "
+                "with an adb connection over TLS (wireless debugging).",
+    },
+    {
         .longopt_id = OPT_TUNNEL_PORT,
         .longopt = "tunnel-port",
         .argdesc = "port",
@@ -2128,6 +2143,35 @@ parse_integer_arg(const char *s, long *out, bool accept_suffix, long min,
     }
 
     *out = value;
+    return true;
+}
+
+static bool
+parse_video_tcp(const char *s, uint32_t *host, uint16_t *port) {
+    const char *port_str = s;
+    const char *colon = strchr(s, ':');
+    if (colon) {
+        char ip[16];
+        size_t len = colon - s;
+        if (len >= sizeof(ip)) {
+            LOGE("Invalid IP address: %s", s);
+            return false;
+        }
+        memcpy(ip, s, len);
+        ip[len] = '\0';
+        if (!net_parse_ipv4(ip, host)) {
+            LOGE("Invalid IPv4 address: %s", ip);
+            return false;
+        }
+        port_str = colon + 1;
+    }
+
+    long value;
+    if (!parse_integer_arg(port_str, &value, false, 1, 0xFFFF,
+                           "video TCP port")) {
+        return false;
+    }
+    *port = (uint16_t) value;
     return true;
 }
 
@@ -3720,6 +3764,14 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             case OPT_CAMERA_PIP:
                 opts->camera_pip = true;
                 break;
+            case OPT_VIDEO_TCP:
+                opts->video_tcp = true;
+                opts->video_tcp_port = SC_VIDEO_TCP_DEFAULT_PORT;
+                if (optarg && !parse_video_tcp(optarg, &opts->video_tcp_host,
+                                               &opts->video_tcp_port)) {
+                    return false;
+                }
+                break;
             case OPT_CAMERA_ZOOM:
                 opts->camera_zoom = optarg;
                 break;
@@ -4526,6 +4578,13 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
     if (opts->start_fps_counter && !opts->video_playback) {
         LOGW("--print-fps has no effect without video playback");
         opts->start_fps_counter = false;
+    }
+
+    if (opts->video_tcp && (!opts->video || otg
+            || (!opts->audio && !opts->control))) {
+        // The device information is sent on the first adb socket
+        LOGE("--video-tcp requires video, and audio or control");
+        return false;
     }
 
     if (opts->latency_probe && (!opts->video_playback || !opts->control

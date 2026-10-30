@@ -14,6 +14,7 @@
 #include "util/log.h"
 #include "util/net_intr.h"
 #include "util/process.h"
+#include "util/rand.h"
 #include "util/str.h"
 
 #define SC_SERVER_FILENAME "scrcpy-server"
@@ -412,6 +413,14 @@ execute_server(struct sc_server *server,
     if (params->camera_pip) {
         ADD_PARAM("camera_pip=true");
     }
+    if (params->video_tcp && params->video) {
+        char token[2 * SC_VIDEO_TCP_TOKEN_LENGTH + 1];
+        for (size_t i = 0; i < SC_VIDEO_TCP_TOKEN_LENGTH; ++i) {
+            snprintf(&token[2 * i], 3, "%02x", server->video_tcp_token[i]);
+        }
+        ADD_PARAM("video_tcp_port=%" PRIu16, params->video_tcp_port);
+        ADD_PARAM("video_tcp_token=%s", token);
+    }
     if (params->camera_no_autofocus) {
         ADD_PARAM("camera_no_autofocus=true");
     }
@@ -572,6 +581,66 @@ connect_and_read_byte(struct sc_intr *intr, sc_socket socket,
     return true;
 }
 
+// --video-tcp: connect directly to the server, send the token and wait for
+// the acknowledgment (the server closes the connection on a wrong token)
+static sc_socket
+connect_video_tcp(struct sc_server *server) {
+    uint32_t host = server->params.video_tcp_host;
+    if (!host) {
+        // The IP of a TCP/IP device serial ("192.168.1.2:5555")
+        char *ip = strdup(server->serial);
+        if (!ip) {
+            LOG_OOM();
+            return SC_SOCKET_NONE;
+        }
+        char *colon = strchr(ip, ':');
+        if (colon) {
+            *colon = '\0';
+        }
+        bool ok = colon && net_parse_ipv4(ip, &host);
+        free(ip);
+        if (!ok) {
+            LOGE("--video-tcp: no IPv4 address in the device serial \"%s\", "
+                 "pass it explicitly (--video-tcp=<ip>:<port>)",
+                 server->serial);
+            return SC_SOCKET_NONE;
+        }
+    }
+    uint16_t port = server->params.video_tcp_port;
+
+    // The server listens before the adb sockets are connected, retry briefly
+    // anyway (e.g. a slow network)
+    for (unsigned attempts = 20; attempts; --attempts) {
+        sc_socket socket = net_socket();
+        if (socket != SC_SOCKET_NONE) {
+            char ack;
+            if (net_connect_intr(&server->intr, socket, host, port)
+                    && net_send_all_intr(&server->intr, socket,
+                                         server->video_tcp_token,
+                                         SC_VIDEO_TCP_TOKEN_LENGTH)
+                        == SC_VIDEO_TCP_TOKEN_LENGTH
+                    && net_recv_all_intr(&server->intr, socket, &ack, 1) == 1) {
+                LOGI("Video TCP: connected to %" PRIu32 ".%" PRIu32 ".%" PRIu32
+                     ".%" PRIu32 ":%" PRIu16, host >> 24, (host >> 16) & 0xFF,
+                     (host >> 8) & 0xFF, host & 0xFF, port);
+                return socket;
+            }
+            net_close(socket);
+        }
+
+        if (sc_intr_is_interrupted(&server->intr)) {
+            break;
+        }
+        sc_tick deadline = sc_tick_now() + SC_TICK_FROM_MS(100);
+        if (!sc_server_sleep(server, deadline)) {
+            break;
+        }
+    }
+
+    LOGE("Could not connect the video over TCP to port %" PRIu16, port);
+    return SC_SOCKET_NONE;
+}
+
 static sc_socket
 connect_to_server(struct sc_server *server, unsigned attempts, sc_tick delay,
                   uint32_t host, uint16_t port) {
@@ -611,6 +680,12 @@ sc_server_init(struct sc_server *server, const struct sc_server_params *params,
     // The allocated data in params (const char *) must remain valid until the
     // end of the program
     server->params = *params;
+
+    if (params->video_tcp
+            && !sc_rand_secure(server->video_tcp_token,
+                               sizeof(server->video_tcp_token))) {
+        return false;
+    }
 
     bool ok = sc_adb_init();
     if (!ok) {
@@ -686,7 +761,9 @@ sc_server_connect_to(struct sc_server *server, struct sc_server_info *info) {
     const char *serial = server->serial;
     assert(serial);
 
-    bool video = server->params.video;
+    // With --video-tcp, the video socket does not use the adb tunnel
+    bool video_tcp = server->params.video && server->params.video_tcp;
+    bool video = server->params.video && !video_tcp;
     bool audio = server->params.audio;
     bool control = server->params.control;
     bool client_audio = server->params.client_audio;
@@ -816,6 +893,15 @@ sc_server_connect_to(struct sc_server *server, struct sc_server_info *info) {
     sc_adb_tunnel_close(tunnel, &server->intr, serial,
                         server->device_socket_name);
 
+    if (video_tcp) {
+        // Before reading the device info: the server sends it once the video
+        // is connected
+        video_socket = connect_video_tcp(server);
+        if (video_socket == SC_SOCKET_NONE) {
+            goto fail;
+        }
+    }
+
     sc_socket first_socket = video ? video_socket
                            : audio ? audio_socket
                            : control ? control_socket
@@ -827,7 +913,7 @@ sc_server_connect_to(struct sc_server *server, struct sc_server_info *info) {
         goto fail;
     }
 
-    assert(!video || video_socket != SC_SOCKET_NONE);
+    assert(!(video || video_tcp) || video_socket != SC_SOCKET_NONE);
     assert(!audio || audio_socket != SC_SOCKET_NONE);
     assert(!control || control_socket != SC_SOCKET_NONE);
     assert(!client_audio || client_audio_socket != SC_SOCKET_NONE);

@@ -128,6 +128,22 @@ bypass having to physically connect your device to your computer.
 
 [adb-wireless]: https://developer.android.com/studio/command-line/adb#wireless-android11-command-line
 
+### Direct video connection
+
+Over TCP/IP, the video stream normally goes through the adb connection. It may
+instead use a direct TCP connection to the device (audio and control still use
+adb):
+
+```bash
+scrcpy --video-tcp                    # port 27200, IP from the device serial
+scrcpy --video-tcp=5000               # another port
+scrcpy --video-tcp=192.168.1.2:5000   # explicit IP (e.g. mDNS serial)
+```
+
+The device listens on the port only until the client connects; the client is
+authenticated by a random token passed through adb. The video itself is not
+encrypted, even if the adb connection is (Android 11 wireless debugging).
+
 
 ## Reconnection
 

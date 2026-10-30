@@ -430,6 +430,41 @@ static void test_latency_probe(void) {
     assert(!scrcpy_parse_args(&args3, ARRAY_LEN(argv3), argv3));
 }
 
+static void test_video_tcp(void) {
+    struct scrcpy_cli_args args = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv[] = {"scrcpy", "--video-tcp"};
+    assert(scrcpy_parse_args(&args, ARRAY_LEN(argv), argv));
+    assert(args.opts.video_tcp);
+    assert(args.opts.video_tcp_port == SC_VIDEO_TCP_DEFAULT_PORT);
+    assert(!args.opts.video_tcp_host);
+
+    struct scrcpy_cli_args args2 = {
+        .opts = scrcpy_options_default,
+    };
+    char *argv2[] = {"scrcpy", "--video-tcp=192.168.1.2:5000"};
+    assert(scrcpy_parse_args(&args2, ARRAY_LEN(argv2), argv2));
+    assert(args2.opts.video_tcp_host == 0xC0A80102);
+    assert(args2.opts.video_tcp_port == 5000);
+
+    char *bad[][3] = {
+        {"scrcpy", "--video-tcp=0", NULL},
+        {"scrcpy", "--video-tcp=1.2.3:5000", NULL},
+        {"scrcpy", "--video-tcp=1.2.3.4:", NULL},
+        {"scrcpy", "--video-tcp", "--no-video"},
+        {"scrcpy", "--video-tcp", "--no-control"}, // and audio disabled below
+    };
+    for (size_t i = 0; i < ARRAY_LEN(bad); ++i) {
+        struct scrcpy_cli_args a = {
+            .opts = scrcpy_options_default,
+        };
+        a.opts.audio = i != 4;
+        int argc = bad[i][2] ? 3 : 2;
+        assert(!scrcpy_parse_args(&a, argc, bad[i]));
+    }
+}
+
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
@@ -442,6 +477,7 @@ int main(int argc, char *argv[]) {
     test_mouse_bind_info();
     test_show_axis();
     test_latency_probe();
+    test_video_tcp();
     test_ime_option();
     test_ime_invalid_options();
     test_parse_shortcut_mods();

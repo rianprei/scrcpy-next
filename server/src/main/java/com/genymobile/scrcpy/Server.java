@@ -12,6 +12,7 @@ import com.genymobile.scrcpy.control.Controller;
 import com.genymobile.scrcpy.device.DesktopConnection;
 import com.genymobile.scrcpy.device.Device;
 import com.genymobile.scrcpy.device.Streamer;
+import com.genymobile.scrcpy.device.VideoTcpServer;
 import com.genymobile.scrcpy.ime.ImeManager;
 import com.genymobile.scrcpy.model.ConfigurationException;
 import com.genymobile.scrcpy.model.NewDisplay;
@@ -35,6 +36,7 @@ import android.system.Os;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,7 +131,24 @@ public final class Server {
             asyncProcessors.add(imeManager);
         }
 
-        DesktopConnection connection = DesktopConnection.open(scid, tunnelForward, video, audio, control, clientAudio, sendDummyByte);
+        // --video-tcp: listen before connecting the adb sockets (the client connects to it after them)
+        ServerSocket videoTcpServer = video && options.getVideoTcpPort() != 0 ? VideoTcpServer.listen(options.getVideoTcpPort()) : null;
+        DesktopConnection connection;
+        try {
+            connection = DesktopConnection.open(scid, tunnelForward, video && videoTcpServer == null, audio, control, clientAudio, sendDummyByte);
+            if (videoTcpServer != null) {
+                try {
+                    connection.acceptVideoTcp(videoTcpServer, options.getVideoTcpToken());
+                } catch (IOException e) {
+                    connection.close();
+                    throw e;
+                }
+            }
+        } finally {
+            if (videoTcpServer != null) {
+                videoTcpServer.close();
+            }
+        }
         try {
             if (options.getSendDeviceMeta()) {
                 connection.sendDeviceMeta(Device.getDeviceName());
