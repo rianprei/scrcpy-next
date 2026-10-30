@@ -181,6 +181,13 @@ public class CameraCapture extends SurfaceCapture {
                     break;
                 } catch (CameraAccessException e) {
                     if (--attempts == 0) {
+                        if (Build.VERSION.SDK_INT == AndroidVersions.API_30_ANDROID_11
+                                && e.getReason() == CameraAccessException.CAMERA_DISABLED) {
+                            // Measured on the AOSP Android 11 emulator: the camera service restricts the shell even with the
+                            // foreground overlay window
+                            Ln.e("The camera service refused the camera to the shell: camera capture on Android 11 is "
+                                    + "device-dependent (it requires Android 12 on most devices)");
+                        }
                         throw e;
                     }
                     Thread.sleep(200);
