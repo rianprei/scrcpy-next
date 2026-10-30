@@ -55,6 +55,26 @@ scrcpy --raw-key-events
 [prefertext]: https://github.com/Genymobile/scrcpy/issues/650#issuecomment-512945343
 
 
+### Non-ASCII text and computer input method
+
+Android cannot generate key events for most non-ASCII characters. Two options
+inject such text:
+
+```bash
+scrcpy --text-via-clipboard  # paste non-ASCII text through the clipboard
+scrcpy --ime                 # type through a scrcpy input method on the device
+```
+
+With `--ime`, a small input method APK (`scrcpy-ime.apk`, next to the portable
+executable, or `SCRCPY_IME_PATH`) is installed if necessary and selected for
+the session, then the previous input method is restored on exit. Any Unicode
+text is injected, and the composition of the computer input method (for
+example for Chinese, Japanese or Korean) is shown in the device text field,
+with the candidate window placed at the Android cursor.
+
+It is only available for the main display, with the SDK keyboard.
+
+
 ### Key repeat
 
 By default, holding a key down generates repeated key events. Ths can cause

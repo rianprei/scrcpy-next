@@ -6,8 +6,8 @@ base {
     archivesName = 'scrcpy-ime'
 }
 
-def imeVersionName = providers.gradleProperty('scrcpyVersionName').getOrElse('4.1')
-def imeVersionCode = providers.gradleProperty('scrcpyVersionCode').getOrElse('40100').toInteger()
+def imeVersionName = providers.gradleProperty('scrcpyVersionName').getOrElse('5.0.1')
+def imeVersionCode = providers.gradleProperty('scrcpyVersionCode').getOrElse('50001').toInteger()
 def releaseSigningVariables = [
         'SCRCPY_IME_STORE_FILE',
         'SCRCPY_IME_STORE_PASSWORD',

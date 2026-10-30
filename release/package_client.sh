@@ -29,6 +29,8 @@ mkdir -p "$ARCHIVE_DIR/$TARGET_DIRNAME"
 
 cp -r "$BUILD_DIR/dist/." "$ARCHIVE_DIR/$TARGET_DIRNAME/"
 cp "$WORK_DIR/build-server/server/scrcpy-server" "$ARCHIVE_DIR/$TARGET_DIRNAME/"
+# IME sidecar (--ime), found next to the portable executable
+cp "$WORK_DIR/build-server/server/scrcpy-ime.apk" "$ARCHIVE_DIR/$TARGET_DIRNAME/"
 
 mkdir -p "$OUTPUT_DIR"
 
