@@ -717,18 +717,18 @@ public class CameraCapture extends SurfaceCapture {
         Ln.i("Camera autofocus disabled");
 
         if (!Float.isNaN(focusDistance)) {
-            Float minFocusDistance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
-            if (minFocusDistance == null || minFocusDistance == 0) {
+            Float minDistance = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+            if (minDistance == null || minDistance == 0) {
                 // 0 (or unavailable) means the lens is fixed-focus: LENS_FOCUS_DISTANCE cannot be set
                 Ln.w("Camera '" + cameraId + "' has a fixed-focus lens; --camera-focus-distance ignored");
             } else {
                 float clamped = focusDistance;
                 if (clamped < 0) {
                     clamped = 0;
-                } else if (clamped > minFocusDistance) {
+                } else if (clamped > minDistance) {
                     Ln.w("Requested focus distance " + focusDistance + " exceeds the closest focus distance "
-                            + minFocusDistance + "; clamping");
-                    clamped = minFocusDistance;
+                            + minDistance + "; clamping");
+                    clamped = minDistance;
                 }
                 requestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, clamped);
                 manualFocus = clamped;

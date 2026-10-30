@@ -444,17 +444,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
                     return true;
                 case ControlMessage.TYPE_INJECT_TEXT:
                     if (supportsInputEvents) {
-                        if (imeManager != null) {
-                            if (msg.isComposing()) {
-                                imeManager.sendComposingText(msg.getText());
-                            } else {
-                                imeManager.sendText(msg.getText());
-                            }
-                        } else {
-                            if (!msg.isComposing()) {
-                                injectText(msg.getText());
-                            }
-                        }
+                        injectText(msg.getText(), msg.isComposing());
                     }
                     return true;
                 case ControlMessage.TYPE_INJECT_TOUCH_EVENT:
@@ -586,6 +576,19 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
             }
         }
         return true;
+    }
+
+    private void injectText(String text, boolean composing) throws IOException {
+        if (imeManager != null) {
+            // --ime: the input method sidecar injects any text, and shows the composition
+            if (composing) {
+                imeManager.sendComposingText(text);
+            } else {
+                imeManager.sendText(text);
+            }
+        } else if (!composing) {
+            injectText(text);
+        }
     }
 
     private int injectText(String text) {
@@ -825,7 +828,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         if (clipboardImage) {
             ClipboardManager.Image image = Device.getClipboardImage();
             if (image != null) {
-                sender.send(DeviceMessage.createClipboardImage(image.mimeType, image.data));
+                sender.send(DeviceMessage.createClipboardImage(image.getMimeType(), image.getData()));
                 return;
             }
         }

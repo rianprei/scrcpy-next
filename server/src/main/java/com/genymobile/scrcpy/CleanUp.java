@@ -127,28 +127,21 @@ public final class CleanUp {
         boolean powerOffScreen = options.getPowerOffScreenOnClose();
 
         try {
-            run(displayId, restoreStayOn, disableShowTouches, powerOffScreen, restoreScreenOffTimeout, restoreDisplayImePolicy,
-                    options.getKeepServer(), disablePointerLocation);
+            // The arguments of main() in the clean up process
+            run(String.valueOf(displayId), String.valueOf(restoreStayOn), String.valueOf(disableShowTouches), String.valueOf(powerOffScreen),
+                    String.valueOf(restoreScreenOffTimeout), String.valueOf(restoreDisplayImePolicy), String.valueOf(options.getKeepServer()),
+                    String.valueOf(disablePointerLocation));
         } catch (IOException e) {
             Ln.e("Clean up I/O exception", e);
         }
     }
 
-    private void run(int displayId, int restoreStayOn, boolean disableShowTouches, boolean powerOffScreen, int restoreScreenOffTimeout,
-            int restoreDisplayImePolicy, boolean keepServer, boolean disablePointerLocation) throws IOException {
-        String[] cmd = {
-                "app_process",
-                "/",
-                CleanUp.class.getName(),
-                String.valueOf(displayId),
-                String.valueOf(restoreStayOn),
-                String.valueOf(disableShowTouches),
-                String.valueOf(powerOffScreen),
-                String.valueOf(restoreScreenOffTimeout),
-                String.valueOf(restoreDisplayImePolicy),
-                String.valueOf(keepServer),
-                String.valueOf(disablePointerLocation),
-        };
+    private void run(String... args) throws IOException {
+        String[] cmd = new String[3 + args.length];
+        cmd[0] = "app_process";
+        cmd[1] = "/";
+        cmd[2] = CleanUp.class.getName();
+        System.arraycopy(args, 0, cmd, 3, args.length);
 
         ProcessBuilder builder = new ProcessBuilder(cmd);
         builder.environment().put("CLASSPATH", Server.SERVER_PATH);

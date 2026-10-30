@@ -14,12 +14,20 @@ import java.io.InputStream;
 public final class ClipboardManager {
 
     public static final class Image {
-        public final String mimeType;
-        public final byte[] data;
+        private final String mimeType;
+        private final byte[] data;
 
         private Image(String mimeType, byte[] data) {
             this.mimeType = mimeType;
             this.data = data;
+        }
+
+        public String getMimeType() {
+            return mimeType;
+        }
+
+        public byte[] getData() {
+            return data;
         }
     }
 
