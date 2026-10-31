@@ -1,7 +1,78 @@
-> [!WARNING]
-> **This GitHub repo (<https://github.com/Genymobile/scrcpy>) is the only official
-source for the project. Do not download releases from random websites, even if
-their name contains `scrcpy`.**
+> [!NOTE]
+> **scrcpy-next** is an unofficial fork of [Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)
+> v5.0.1. The official project and releases are at Genymobile/scrcpy.
+
+# scrcpy-next
+
+Upstream scrcpy v5.0.1 plus fixes and features collected from community forks
+(merged commits keep their original authors; features reimplemented from a
+fork's idea credit it in the commit message). **Every new feature is behind an option
+and off by default**: without options, scrcpy-next behaves like upstream.
+
+Download: [releases](https://github.com/rianprei/scrcpy-next/releases)
+(Linux x86_64 and Windows 64-bit). Building: same as upstream ([doc/build.md](doc/build.md)).
+
+## What is new
+
+Latency and transport:
+ - `--latency-probe[=x,y]`: measure the round-trip latency (a touch injected
+   every second until it is drawn in a decoded frame), with p50/p95 summaries
+ - `--latency-stats`: per-stage latency once per second (reception to display,
+   decoding, jitter, and the device encoder `capture->out`)
+ - `--video-tcp[=[ip:]port]`: send the video over a direct TCP connection to the
+   device instead of the adb tunnel, authenticated by a random token sent
+   through adb (the video itself is not encrypted)
+ - `--vsync`, `--video-decoder=name` (any FFmpeg decoder), `--disconnect-timeout`,
+   `--reconnect` (keep the window and reconnect after a device reboot)
+
+Input and text:
+ - `--ime`: scrcpy's own input method on the device, for full Unicode text and
+   IME composition (`scrcpy-ime.apk` is included in the releases)
+ - `--text-via-clipboard`, `--keymap=file` (key to touch mapping, toggled by
+   MOD+j, shown by `--show-keymap`), `--wheel-pinch` (Ctrl+wheel to pinch),
+   `--trackpad` (macOS two-finger gestures), `--shortcut-key=from=to`,
+   `--keyboard-grab`, `--touchscreen-id`
+
+Clipboard, recording and streaming:
+ - `--clipboard-image`: copy images between the device and computer clipboards
+ - MOD+Shift+p pauses/resumes the recording, `--record-segment=s`,
+   `--record-pts=file.csv`, MOD+Shift+s takes a PNG screenshot
+ - `--stream-sink=url` (MPEG-TS over srt/tcp/udp/rtp)
+
+Camera and audio:
+ - `--camera-pip` (camera over the screen), manual camera controls (`--camera-iso`,
+   `--camera-exposure`, `--camera-ev`, AE/AWB locks, OIS/EIS, focus), physical
+   cameras of a logical multi-camera in `--camera-id`
+ - `--audio-match-packages=pkg,...` (capture only these apps),
+   `--client-audio-source` (computer microphone to the device microphone),
+   `--audio-output-device`
+
+Other: `--config-file`/profiles, `--mpris` (Linux media controls), `--show-axis`,
+`--autofocus-window`, `--window-parent` (Windows), `--video-codec=mjpeg|apv`,
+interactive device selection, and the fixes listed in the commit history.
+
+Run `scrcpy --help` for the full list.
+
+## Measured latency
+
+Round trip measured by `--latency-probe` (touch injected on the device until it
+is visible in a decoded frame on the computer) on a POCO 2410FPCC5G (Android 16,
+720x1640 at 120 Hz), home screen, 35 s per configuration (~30 measurements), PC
+on wired Ethernet:
+
+| Connection | Options | p50 | p95 |
+|---|---|---|---|
+| USB | default | 81 ms | 100 ms |
+| USB | `-b 40M` | 77 ms | 104 ms |
+| USB | `--video-codec-options=low-latency:int=1` | 84 ms | 96 ms |
+| USB | `--video-codec=h265` | 87 ms | 99 ms |
+| Wi-Fi 5 GHz | default | 124 ms | 163–215 ms |
+| Wi-Fi 5 GHz | `--video-tcp` | 121 ms | 141–180 ms |
+
+USB is ~40 ms faster than Wi-Fi on this setup. Bit rate and codec change the
+quality, not the latency (differences under ~10 ms are noise). On the computer,
+decoding takes 0–2 ms; the device encoder takes ~24 ms (median); the rest is
+the network and the device input/composition pipeline.
 
 # scrcpy (v5.0.1)
 
